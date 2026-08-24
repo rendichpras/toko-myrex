@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Toko Myrex",
-  description: "Belanja mudah dan aman di Toko Myrex.",
+  description: "Beli dan akses produk digital dengan mudah di Toko Myrex.",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

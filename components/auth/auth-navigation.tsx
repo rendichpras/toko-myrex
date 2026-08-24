@@ -12,7 +12,7 @@ const items = [
 export function AuthNavigation({ mode }: { mode: AuthMode }) {
   return (
     <nav
-      aria-label="Pilihan autentikasi"
+      aria-label="Masuk atau daftar"
       className="grid h-10 grid-cols-2 border bg-muted p-1"
     >
       {items.map((item) => {

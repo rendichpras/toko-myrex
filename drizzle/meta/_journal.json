@@ -15,6 +15,13 @@
       "when": 1787583589398,
       "tag": "0001_wakeful_diamondback",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1787594476960,
+      "tag": "0002_rich_venom",
+      "breakpoints": true
     }
   ]
 }

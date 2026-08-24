@@ -1,7 +1,12 @@
 import { betterAuth } from "better-auth"
 import { drizzleAdapter } from "better-auth/adapters/drizzle"
 import { nextCookies } from "better-auth/next-js"
-import { admin } from "better-auth/plugins"
+import { admin, twoFactor } from "better-auth/plugins"
+import {
+  APIError,
+  createAuthMiddleware,
+  getAuthoritativeSessionFromCtx,
+} from "better-auth/api"
 
 import { db } from "@/lib/db"
 import * as schema from "@/lib/db/schema"
@@ -72,6 +77,7 @@ export const auth = betterAuth({
       banned: false,
       banReason: null,
       banExpires: null,
+      twoFactorEnabled: false,
       ...additionalFields,
       id,
     }),
@@ -80,13 +86,12 @@ export const auth = betterAuth({
       queueAuthEmail({
         to: user.email,
         subject: "Atur ulang kata sandi Toko Myrex",
-        text: `Gunakan tautan berikut untuk mengatur ulang kata sandi akun Toko Myrex: ${url}\n\nAbaikan email ini jika kamu tidak meminta perubahan kata sandi.`,
+        text: `Atur ulang kata sandi Toko Myrex melalui tautan ini: ${url}\n\nAbaikan email ini jika Anda tidak meminta pengaturan ulang kata sandi.`,
         html: emailActionHtml({
-          description:
-            "Gunakan tautan berikut untuk mengatur ulang kata sandi akun Toko Myrex.",
+          description: "Atur ulang kata sandi akun Toko Myrex.",
           label: "Atur ulang kata sandi",
           notice:
-            "Abaikan email ini jika kamu tidak meminta perubahan kata sandi.",
+            "Abaikan email ini jika Anda tidak meminta pengaturan ulang kata sandi.",
           url,
         }),
       })
@@ -102,13 +107,12 @@ export const auth = betterAuth({
       queueAuthEmail({
         to: user.email,
         subject: "Verifikasi email Toko Myrex",
-        text: `Gunakan tautan berikut untuk memverifikasi email akun Toko Myrex: ${url}\n\nAbaikan email ini jika kamu tidak membuat atau mencoba masuk ke akun Toko Myrex.`,
+        text: `Verifikasi email akun Toko Myrex melalui tautan ini: ${url}\n\nAbaikan email ini jika Anda tidak membuat akun atau mencoba masuk ke Toko Myrex.`,
         html: emailActionHtml({
-          description:
-            "Gunakan tautan berikut untuk memverifikasi email akun Toko Myrex.",
+          description: "Verifikasi email akun Toko Myrex.",
           label: "Verifikasi email",
           notice:
-            "Abaikan email ini jika kamu tidak membuat atau mencoba masuk ke akun Toko Myrex.",
+            "Abaikan email ini jika Anda tidak membuat akun atau mencoba masuk ke Toko Myrex.",
           url: url.toString(),
         }),
       })
@@ -122,10 +126,46 @@ export const auth = betterAuth({
       joins: true,
     },
   },
+  hooks: {
+    before: createAuthMiddleware(async (context) => {
+      if (
+        !context.path.startsWith("/admin/") ||
+        context.path === "/admin/has-permission" ||
+        context.path === "/admin/stop-impersonating"
+      ) {
+        return
+      }
+
+      const session = await getAuthoritativeSessionFromCtx(context)
+
+      if (!session) {
+        return
+      }
+
+      const roles =
+        typeof session.user.role === "string"
+          ? session.user.role.split(",").map((role) => role.trim())
+          : []
+
+      if (roles.includes("admin") && !session.user.twoFactorEnabled) {
+        throw new APIError("FORBIDDEN", {
+          code: "TWO_FACTOR_REQUIRED",
+          message:
+            "Aktifkan verifikasi dua langkah untuk mengakses fitur admin.",
+        })
+      }
+    }),
+  },
   plugins: [
     admin({
       defaultRole: "user",
       adminRoles: ["admin"],
+    }),
+    twoFactor({
+      issuer: "Toko Myrex",
+      backupCodeOptions: {
+        storeBackupCodes: "encrypted",
+      },
     }),
     nextCookies(),
   ],

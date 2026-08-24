@@ -20,7 +20,7 @@ export function AuthCard({
       description={
         signIn
           ? "Masukkan email dan kata sandi untuk melanjutkan."
-          : "Isi data berikut untuk membuat akun."
+          : "Masukkan data untuk membuat akun."
       }
       navigation={<AuthNavigation mode={mode} />}
     >

@@ -3,17 +3,17 @@ import { z } from "zod"
 const emailSchema = z
   .string()
   .trim()
-  .min(1, "Email wajib diisi.")
+  .min(1, "Masukkan email.")
   .pipe(z.email("Masukkan email yang valid."))
 
 const passwordSchema = z
   .string()
-  .min(8, "Kata sandi minimal 8 karakter.")
-  .max(128, "Kata sandi maksimal 128 karakter.")
+  .min(8, "Gunakan minimal 8 karakter.")
+  .max(128, "Gunakan maksimal 128 karakter.")
 
 export const signInSchema = z.object({
   email: emailSchema,
-  password: z.string().min(1, "Kata sandi wajib diisi."),
+  password: z.string().min(1, "Masukkan kata sandi."),
 })
 
 export const forgotPasswordSchema = z.object({
@@ -25,25 +25,26 @@ export const signUpSchema = z
     name: z
       .string()
       .trim()
-      .min(2, "Nama lengkap minimal 2 karakter.")
-      .max(100, "Nama lengkap maksimal 100 karakter."),
+      .min(1, "Masukkan nama lengkap.")
+      .min(2, "Gunakan minimal 2 karakter.")
+      .max(100, "Gunakan maksimal 100 karakter."),
     email: emailSchema,
     password: passwordSchema,
-    passwordConfirmation: z.string(),
+    passwordConfirmation: z.string().min(1, "Ulangi kata sandi."),
   })
   .refine((data) => data.password === data.passwordConfirmation, {
-    message: "Konfirmasi kata sandi tidak cocok.",
+    message: "Kata sandi tidak cocok.",
     path: ["passwordConfirmation"],
   })
 
 export const resetPasswordSchema = z
   .object({
-    token: z.string().trim().min(1, "Tautan atur ulang tidak valid."),
+    token: z.string().trim().min(1, "Minta tautan pengaturan ulang baru."),
     password: passwordSchema,
-    passwordConfirmation: z.string(),
+    passwordConfirmation: z.string().min(1, "Ulangi kata sandi."),
   })
   .refine((data) => data.password === data.passwordConfirmation, {
-    message: "Konfirmasi kata sandi tidak cocok.",
+    message: "Kata sandi tidak cocok.",
     path: ["passwordConfirmation"],
   })
 

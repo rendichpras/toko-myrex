@@ -3,24 +3,38 @@ type AuthClientError = {
   status?: number
 }
 
+export const authConnectionErrorMessage =
+  "Tidak dapat terhubung. Periksa koneksi internet, lalu coba lagi."
+
 export function getAuthErrorMessage(
   error: AuthClientError,
   fallback: string
 ) {
   if (error.status === 429) {
-    return "Terlalu banyak percobaan. Tunggu beberapa saat, lalu coba lagi."
+    return "Terlalu banyak percobaan. Tunggu sebentar, lalu coba lagi."
   }
 
   switch (error.code) {
     case "EMAIL_NOT_VERIFIED":
-      return "Email belum diverifikasi. Tautan verifikasi baru telah dikirim."
+      return "Email belum diverifikasi. Buka tautan verifikasi terbaru yang dikirim melalui email."
     case "INVALID_EMAIL_OR_PASSWORD":
     case "INVALID_PASSWORD":
     case "USER_NOT_FOUND":
       return "Email atau kata sandi tidak cocok."
+    case "INVALID_CODE":
+      return "Kode tidak cocok. Masukkan kode terbaru dari aplikasi autentikator."
+    case "INVALID_BACKUP_CODE":
+      return "Kode cadangan tidak cocok atau sudah digunakan."
+    case "INVALID_TWO_FACTOR_COOKIE":
+      return "Sesi verifikasi berakhir. Mulai lagi proses masuk."
+    case "TOTP_NOT_ENABLED":
+    case "TWO_FACTOR_NOT_ENABLED":
+      return "Aplikasi autentikator belum terhubung. Mulai lagi proses aktivasi."
+    case "TWO_FACTOR_REQUIRED":
+      return "Aktifkan verifikasi dua langkah untuk mengakses fitur admin."
     case "INVALID_TOKEN":
     case "TOKEN_EXPIRED":
-      return "Tautan tidak valid atau sudah kedaluwarsa. Gunakan tautan terbaru."
+      return "Tautan ini tidak valid atau sudah kedaluwarsa. Minta tautan baru."
     default:
       return fallback
   }

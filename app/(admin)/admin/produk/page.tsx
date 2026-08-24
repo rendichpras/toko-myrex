@@ -21,7 +21,7 @@ export default async function AdminProductsPage() {
   return (
     <AdminPage
       title="Produk"
-      description="Kelola katalog, harga, dan akses produk digital yang kamu jual."
+      description="Kelola katalog, harga, dan akses produk digital."
     >
       <Empty>
         <EmptyHeader>
@@ -32,8 +32,8 @@ export default async function AdminProductsPage() {
             Belum ada produk
           </EmptyTitle>
           <EmptyDescription>
-            Produk yang kamu tambahkan akan ditampilkan di sini dan dapat
-            dipublikasikan ke toko.
+            Produk yang ditambahkan akan muncul di sini dan dapat dipublikasikan
+            ke toko.
           </EmptyDescription>
         </EmptyHeader>
       </Empty>

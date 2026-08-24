@@ -21,7 +21,7 @@ export default async function AdminOrdersPage() {
   return (
     <AdminPage
       title="Pesanan"
-      description="Pantau pembayaran dan status pemenuhan setiap pesanan."
+      description="Pantau pembayaran dan proses setiap pesanan."
     >
       <Empty>
         <EmptyHeader>
@@ -32,8 +32,7 @@ export default async function AdminOrdersPage() {
             Belum ada pesanan
           </EmptyTitle>
           <EmptyDescription>
-            Pesanan baru akan ditampilkan di sini setelah pelanggan
-            menyelesaikan checkout.
+            Pesanan baru akan muncul setelah pelanggan menyelesaikan pembayaran.
           </EmptyDescription>
         </EmptyHeader>
       </Empty>

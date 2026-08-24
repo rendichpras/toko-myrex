@@ -4,8 +4,8 @@ import { AuthCard } from "@/components/auth/auth-card"
 import { AuthPage } from "@/components/auth/auth-page"
 
 export const metadata: Metadata = {
-  title: "Daftar | Toko Myrex",
-  description: "Buat akun Toko Myrex.",
+  title: "Buat akun | Toko Myrex",
+  description: "Buat akun untuk membeli dan mengakses produk digital.",
 }
 
 export default function SignUpPage() {

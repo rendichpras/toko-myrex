@@ -23,6 +23,18 @@ export async function requireSession() {
 }
 
 export async function requireAdmin(redirectTo = "/admin") {
+  const session = await requireAdminIdentity(redirectTo)
+
+  if (!session.user.twoFactorEnabled) {
+    redirect(
+      `/aktifkan-verifikasi-dua-langkah?next=${encodeURIComponent(redirectTo)}`
+    )
+  }
+
+  return session
+}
+
+export async function requireAdminIdentity(redirectTo = "/admin") {
   const session = await getSession()
 
   if (!session) {

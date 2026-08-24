@@ -8,7 +8,10 @@ import { AuthPanel } from "@/components/auth/auth-panel"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { authClient } from "@/lib/auth-client"
-import { getAuthErrorMessage } from "@/lib/auth-error"
+import {
+  authConnectionErrorMessage,
+  getAuthErrorMessage,
+} from "@/lib/auth-error"
 
 export function VerifyEmailCard({ token }: { token: string }) {
   const [message, setMessage] = useState("")
@@ -28,7 +31,7 @@ export function VerifyEmailCard({ token }: { token: string }) {
         setMessage(
           getAuthErrorMessage(
             error,
-            "Email tidak dapat diverifikasi. Gunakan tautan terbaru, lalu coba lagi."
+            "Tidak dapat memverifikasi email. Buka tautan terbaru, lalu coba lagi."
           )
         )
         return
@@ -36,7 +39,7 @@ export function VerifyEmailCard({ token }: { token: string }) {
 
       setSuccess(true)
     } catch {
-      setMessage("Koneksi bermasalah. Periksa koneksi internet, lalu coba lagi.")
+      setMessage(authConnectionErrorMessage)
     } finally {
       setPending(false)
     }
@@ -45,8 +48,8 @@ export function VerifyEmailCard({ token }: { token: string }) {
   if (!token) {
     return (
       <AuthPanel
-        title="Verifikasi email"
-        description="Buka tautan verifikasi yang dikirim ke email kamu."
+        title="Buka tautan verifikasi"
+        description="Buka tautan verifikasi terbaru yang dikirim melalui email."
       >
         <Button
           variant="outline"
@@ -63,8 +66,8 @@ export function VerifyEmailCard({ token }: { token: string }) {
   if (success) {
     return (
       <AuthPanel
-        title="Email berhasil diverifikasi"
-        description="Akun Toko Myrex sudah aktif dan siap digunakan."
+        title="Email terverifikasi"
+        description="Akun Toko Myrex siap digunakan."
       >
         <Button
           size="lg"
@@ -80,7 +83,7 @@ export function VerifyEmailCard({ token }: { token: string }) {
   return (
     <AuthPanel
       title="Verifikasi email"
-      description="Verifikasi email untuk mengaktifkan akun Toko Myrex."
+      description="Verifikasi email untuk mengaktifkan akun."
       footer={
         <Button
           variant="link"

@@ -15,7 +15,10 @@ import {
 import { PasswordInput } from "@/components/auth/password-input"
 import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { authClient } from "@/lib/auth-client"
-import { getAuthErrorMessage } from "@/lib/auth-error"
+import {
+  authConnectionErrorMessage,
+  getAuthErrorMessage,
+} from "@/lib/auth-error"
 import {
   signInSchema,
   type AuthFormState,
@@ -45,7 +48,7 @@ export function SignInForm({ redirectTo = "/" }: { redirectTo?: string }) {
     setPending(true)
 
     try {
-      const { error } = await authClient.signIn.email(result.data)
+      const { data, error } = await authClient.signIn.email(result.data)
 
       if (error) {
         setMessage(
@@ -54,10 +57,33 @@ export function SignInForm({ redirectTo = "/" }: { redirectTo?: string }) {
         return
       }
 
+      if (
+        data &&
+        "twoFactorRedirect" in data &&
+        data.twoFactorRedirect === true
+      ) {
+        router.push(
+          `/verifikasi-dua-langkah?next=${encodeURIComponent(redirectTo)}`
+        )
+        return
+      }
+
+      const roles = data?.user.role?.split(",").map((role) => role.trim()) ?? []
+
+      if (roles.includes("admin") && !data?.user.twoFactorEnabled) {
+        router.replace(
+          `/aktifkan-verifikasi-dua-langkah?next=${encodeURIComponent(
+            redirectTo.startsWith("/admin") ? redirectTo : "/admin"
+          )}`
+        )
+        router.refresh()
+        return
+      }
+
       router.replace(redirectTo)
       router.refresh()
     } catch {
-      setMessage("Koneksi bermasalah. Periksa koneksi internet, lalu coba lagi.")
+      setMessage(authConnectionErrorMessage)
     } finally {
       setPending(false)
     }
@@ -132,7 +158,7 @@ export function SignInForm({ redirectTo = "/" }: { redirectTo?: string }) {
 
       {message ? <AuthFormMessage message={message} /> : null}
 
-      <AuthSubmitButton pending={pending} pendingLabel="Sedang masuk...">
+      <AuthSubmitButton pending={pending} pendingLabel="Masuk...">
         Masuk
       </AuthSubmitButton>
     </form>

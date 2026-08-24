@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { SidebarMenuButton } from "@/components/ui/sidebar"
 import { authClient } from "@/lib/auth-client"
+import { authConnectionErrorMessage } from "@/lib/auth-error"
 
 type AdminUserMenuProps = {
   user: {
@@ -51,7 +52,7 @@ export function AdminUserMenu({ user }: AdminUserMenuProps) {
       const { error } = await authClient.signOut()
 
       if (error) {
-        setErrorMessage("Tidak dapat keluar dari akun. Coba lagi.")
+        setErrorMessage("Tidak dapat keluar. Coba lagi.")
         setPending(false)
         return
       }
@@ -59,7 +60,7 @@ export function AdminUserMenu({ user }: AdminUserMenuProps) {
       router.replace("/masuk")
       router.refresh()
     } catch {
-      setErrorMessage("Tidak dapat keluar dari akun. Periksa koneksi dan coba lagi.")
+      setErrorMessage(authConnectionErrorMessage)
       setPending(false)
     }
   }
@@ -96,7 +97,7 @@ export function AdminUserMenu({ user }: AdminUserMenuProps) {
             <span className="flex flex-col gap-0.5">
               <span className="font-medium text-foreground">{user.name}</span>
               <span>{user.email}</span>
-              <span>Administrator</span>
+              <span>Admin</span>
             </span>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
@@ -106,7 +107,7 @@ export function AdminUserMenu({ user }: AdminUserMenuProps) {
             onClick={handleSignOut}
           >
             <LogOut aria-hidden="true" />
-            {pending ? "Sedang keluar..." : "Keluar dari akun"}
+            {pending ? "Keluar..." : "Keluar"}
           </DropdownMenuItem>
         </DropdownMenuGroup>
         {errorMessage ? (

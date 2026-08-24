@@ -15,7 +15,10 @@ import {
 import { Button } from "@/components/ui/button"
 import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { authClient } from "@/lib/auth-client"
-import { getAuthErrorMessage } from "@/lib/auth-error"
+import {
+  authConnectionErrorMessage,
+  getAuthErrorMessage,
+} from "@/lib/auth-error"
 import {
   forgotPasswordSchema,
   type AuthFormState,
@@ -58,7 +61,7 @@ export function ForgotPasswordCard() {
         setMessage(
           getAuthErrorMessage(
             error,
-            "Tautan tidak dapat dikirim. Coba lagi."
+            "Tidak dapat mengirim tautan. Coba lagi."
           )
         )
         return
@@ -66,7 +69,7 @@ export function ForgotPasswordCard() {
 
       setSuccess(true)
     } catch {
-      setMessage("Koneksi bermasalah. Periksa koneksi internet, lalu coba lagi.")
+      setMessage(authConnectionErrorMessage)
     } finally {
       setPending(false)
     }
@@ -74,11 +77,11 @@ export function ForgotPasswordCard() {
 
   return (
     <AuthPanel
-      title={success ? "Periksa email" : "Lupa kata sandi"}
+      title={success ? "Periksa email" : "Atur ulang kata sandi"}
       description={
         success
-          ? "Ikuti petunjuk di email untuk melanjutkan."
-          : "Masukkan email untuk menerima tautan atur ulang kata sandi."
+          ? "Buka tautan dalam email untuk membuat kata sandi baru."
+          : "Masukkan email untuk menerima tautan pengaturan ulang kata sandi."
       }
       footer={
         <Button
@@ -93,7 +96,7 @@ export function ForgotPasswordCard() {
       {success ? (
         <AuthFormMessage
           variant="success"
-          message="Jika email terdaftar, tautan atur ulang telah dikirim. Periksa kotak masuk atau folder spam."
+          message="Jika email terhubung ke akun, tautan telah dikirim. Periksa kotak masuk dan folder spam."
         />
       ) : (
         <form
@@ -134,8 +137,8 @@ export function ForgotPasswordCard() {
 
           {message ? <AuthFormMessage message={message} /> : null}
 
-          <AuthSubmitButton pending={pending} pendingLabel="Mengirim...">
-            Kirim tautan
+          <AuthSubmitButton pending={pending} pendingLabel="Mengirim tautan...">
+            Kirim tautan pengaturan ulang
           </AuthSubmitButton>
         </form>
       )}

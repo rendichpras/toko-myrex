@@ -21,7 +21,7 @@ export default async function AdminCustomersPage() {
   return (
     <AdminPage
       title="Pelanggan"
-      description="Kelola akun pelanggan dan lihat riwayat pembelian mereka."
+      description="Kelola akun pelanggan dan lihat riwayat pembelian."
     >
       <Empty>
         <EmptyHeader>
@@ -32,8 +32,8 @@ export default async function AdminCustomersPage() {
             Belum ada pelanggan
           </EmptyTitle>
           <EmptyDescription>
-            Pelanggan akan ditampilkan di sini setelah mereka membuat akun atau
-            melakukan pembelian.
+            Pelanggan akan muncul setelah membuat akun atau menyelesaikan
+            pembelian.
           </EmptyDescription>
         </EmptyHeader>
       </Empty>

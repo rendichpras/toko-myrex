@@ -20,7 +20,10 @@ import {
   FieldLabel,
 } from "@/components/ui/field"
 import { authClient } from "@/lib/auth-client"
-import { getAuthErrorMessage } from "@/lib/auth-error"
+import {
+  authConnectionErrorMessage,
+  getAuthErrorMessage,
+} from "@/lib/auth-error"
 import {
   signUpSchema,
   type AuthFormState,
@@ -70,7 +73,7 @@ export function SignUpForm() {
 
       setSuccess(true)
     } catch {
-      setMessage("Koneksi bermasalah. Periksa koneksi internet, lalu coba lagi.")
+      setMessage(authConnectionErrorMessage)
     } finally {
       setPending(false)
     }
@@ -81,7 +84,7 @@ export function SignUpForm() {
       <div className="grid gap-4">
         <AuthFormMessage
           variant="success"
-          message="Periksa email untuk melanjutkan verifikasi. Jika tidak terlihat, periksa folder spam."
+          message="Buka tautan verifikasi yang dikirim melalui email. Periksa folder spam jika pesan tidak terlihat."
         />
         <Button
           variant="outline"

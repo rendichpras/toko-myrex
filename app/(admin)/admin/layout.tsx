@@ -8,7 +8,7 @@ export const metadata: Metadata = {
     default: "Admin | Toko Myrex",
     template: "%s | Admin Toko Myrex",
   },
-  description: "Panel admin Toko Myrex.",
+  description: "Kelola operasional Toko Myrex melalui panel admin.",
   robots: {
     index: false,
     follow: false,

@@ -19,7 +19,7 @@ import {
 import { requireAdmin } from "@/lib/session"
 
 export const metadata: Metadata = {
-  title: "Dashboard",
+  title: "Ringkasan",
 }
 
 const sections = [
@@ -31,7 +31,7 @@ const sections = [
   },
   {
     title: "Pesanan",
-    description: "Pantau pembayaran dan status pemenuhan pesanan.",
+    description: "Pantau pembayaran dan proses setiap pesanan.",
     href: "/admin/pesanan",
     icon: ReceiptText,
   },
@@ -49,7 +49,7 @@ export default async function AdminDashboardPage() {
 
   return (
     <AdminPage
-      title="Dashboard"
+      title="Ringkasan"
       description={`Selamat datang, ${firstName}. Kelola operasional Toko Myrex dari satu tempat.`}
     >
       <section aria-labelledby="akses-cepat" className="space-y-3">
@@ -58,7 +58,7 @@ export default async function AdminDashboardPage() {
             Akses cepat
           </h2>
           <p className="text-sm text-muted-foreground">
-            Buka bagian yang ingin kamu kelola.
+            Pilih bagian yang ingin dikelola.
           </p>
         </div>
 
@@ -95,7 +95,7 @@ export default async function AdminDashboardPage() {
             Aktivitas terbaru
           </h2>
           <p className="text-sm text-muted-foreground">
-            Pantau aktivitas penting di tokomu.
+            Pantau aktivitas penting toko.
           </p>
         </div>
 
@@ -108,7 +108,7 @@ export default async function AdminDashboardPage() {
               Belum ada aktivitas
             </EmptyTitle>
             <EmptyDescription>
-              Pesanan baru dan perubahan penting akan ditampilkan di sini.
+              Pesanan baru dan perubahan penting akan muncul di sini.
             </EmptyDescription>
           </EmptyHeader>
         </Empty>

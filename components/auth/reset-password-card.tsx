@@ -16,7 +16,10 @@ import { PasswordInput } from "@/components/auth/password-input"
 import { Button } from "@/components/ui/button"
 import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { authClient } from "@/lib/auth-client"
-import { getAuthErrorMessage } from "@/lib/auth-error"
+import {
+  authConnectionErrorMessage,
+  getAuthErrorMessage,
+} from "@/lib/auth-error"
 import { cn } from "@/lib/utils"
 import {
   resetPasswordSchema,
@@ -83,7 +86,7 @@ export function ResetPasswordCard({ token }: { token: string }) {
         setMessage(
           getAuthErrorMessage(
             error,
-            "Kata sandi tidak dapat diubah. Minta tautan baru, lalu coba lagi."
+            "Tidak dapat memperbarui kata sandi. Minta tautan baru, lalu coba lagi."
           )
         )
         return
@@ -91,7 +94,7 @@ export function ResetPasswordCard({ token }: { token: string }) {
 
       setSuccess(true)
     } catch {
-      setMessage("Koneksi bermasalah. Periksa koneksi internet, lalu coba lagi.")
+      setMessage(authConnectionErrorMessage)
     } finally {
       setPending(false)
     }
@@ -100,15 +103,15 @@ export function ResetPasswordCard({ token }: { token: string }) {
   if (!token) {
     return (
       <AuthPanel
-        title="Tautan tidak valid"
-        description="Tautan atur ulang kata sandi tidak valid atau sudah kedaluwarsa."
+        title="Tautan tidak dapat digunakan"
+        description="Tautan ini tidak valid atau sudah kedaluwarsa. Minta tautan baru."
       >
         <Button
           size="lg"
           render={<Link href="/lupa-kata-sandi" />}
           nativeButton={false}
         >
-          Kirim tautan baru
+          Minta tautan baru
         </Button>
       </AuthPanel>
     )
@@ -117,8 +120,8 @@ export function ResetPasswordCard({ token }: { token: string }) {
   if (success) {
     return (
       <AuthPanel
-        title="Kata sandi berhasil diubah"
-        description="Gunakan kata sandi baru untuk masuk ke akun."
+        title="Kata sandi diperbarui"
+        description="Masuk menggunakan kata sandi baru."
       >
         <Button
           size="lg"
@@ -134,7 +137,7 @@ export function ResetPasswordCard({ token }: { token: string }) {
   return (
     <AuthPanel
       title="Atur ulang kata sandi"
-      description="Buat kata sandi baru yang tidak digunakan di akun lain."
+      description="Buat kata sandi baru untuk akun Toko Myrex."
       footer={
         <Button
           variant="link"
@@ -221,8 +224,8 @@ export function ResetPasswordCard({ token }: { token: string }) {
 
         {message ? <AuthFormMessage message={message} /> : null}
 
-        <AuthSubmitButton pending={pending} pendingLabel="Menyimpan...">
-          Simpan kata sandi
+        <AuthSubmitButton pending={pending} pendingLabel="Memperbarui...">
+          Perbarui kata sandi
         </AuthSubmitButton>
       </form>
     </AuthPanel>

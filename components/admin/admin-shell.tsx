@@ -34,7 +34,7 @@ import {
 import { TooltipProvider } from "@/components/ui/tooltip"
 
 const navigation = [
-  { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/admin", label: "Ringkasan", icon: LayoutDashboard },
   { href: "/admin/produk", label: "Produk", icon: Package },
   { href: "/admin/pesanan", label: "Pesanan", icon: ReceiptText },
   { href: "/admin/pelanggan", label: "Pelanggan", icon: Users },
@@ -104,7 +104,7 @@ export function AdminShell({ children, user }: AdminShellProps) {
           <SidebarHeader>
             <Link
               href="/admin"
-              aria-label="Buka dashboard Toko Myrex"
+              aria-label="Buka ringkasan admin Toko Myrex"
               className="flex h-11 items-center gap-2 px-2 outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
             >
               <span className="hidden size-7 shrink-0 items-center justify-center bg-sidebar-primary text-xs font-semibold text-sidebar-primary-foreground group-data-[collapsible=icon]:flex">
@@ -135,12 +135,18 @@ export function AdminShell({ children, user }: AdminShellProps) {
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarFooter>
-          <SidebarRail />
+          <SidebarRail
+            aria-label="Buka atau tutup menu admin"
+            title="Buka atau tutup menu admin"
+          />
         </Sidebar>
 
         <SidebarInset>
           <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4 sm:px-6">
-            <SidebarTrigger />
+            <SidebarTrigger
+              aria-label="Buka atau tutup menu admin"
+              title="Buka atau tutup menu admin"
+            />
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem>
