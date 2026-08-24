@@ -16,16 +16,16 @@ export const user = pgTable("user", {
   email: text("email").notNull().unique(),
   emailVerified: boolean("email_verified").default(false).notNull(),
   image: text("image"),
-  role: text("role").default("user").notNull(),
-  banned: boolean("banned").default(false).notNull(),
-  banReason: text("ban_reason"),
-  banExpires: timestamp("ban_expires"),
-  twoFactorEnabled: boolean("two_factor_enabled").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
     .$onUpdate(() => /* @__PURE__ */ new Date())
     .notNull(),
+  role: text("role").default("user").notNull(),
+  banned: boolean("banned").default(false).notNull(),
+  banReason: text("ban_reason"),
+  banExpires: timestamp("ban_expires"),
+  twoFactorEnabled: boolean("two_factor_enabled").default(false).notNull(),
 });
 
 export const session = pgTable(
@@ -95,13 +95,6 @@ export const verification = pgTable(
   (table) => [index("verification_identifier_idx").on(table.identifier)],
 );
 
-export const rateLimit = pgTable("rate_limit", {
-  id: text("id").primaryKey(),
-  key: text("key").notNull().unique(),
-  count: integer("count").notNull(),
-  lastRequest: bigint("last_request", { mode: "number" }).notNull(),
-});
-
 export const twoFactor = pgTable(
   "two_factor",
   {
@@ -120,6 +113,13 @@ export const twoFactor = pgTable(
     index("twoFactor_userId_idx").on(table.userId),
   ],
 );
+
+export const rateLimit = pgTable("rate_limit", {
+  id: text("id").primaryKey(),
+  key: text("key").notNull().unique(),
+  count: integer("count").notNull(),
+  lastRequest: bigint("last_request", { mode: "number" }).notNull(),
+});
 
 export const userRelations = relations(user, ({ many }) => ({
   sessions: many(session),

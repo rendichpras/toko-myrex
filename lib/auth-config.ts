@@ -10,7 +10,7 @@ import {
 
 import { compromisedPasswordMessage } from "@/lib/auth-error"
 import { db } from "@/lib/db"
-import * as schema from "@/lib/db/schema"
+import * as schema from "@/lib/db/schema/index"
 import { queueAuthEmail } from "@/lib/email"
 
 const buildFallbackSecret =
@@ -67,6 +67,28 @@ export const auth = betterAuth({
     provider: "pg",
     schema,
   }),
+  user: {
+    additionalFields: {
+      role: {
+        type: "string",
+        required: true,
+        defaultValue: "user",
+        input: false,
+      },
+      banned: {
+        type: "boolean",
+        required: true,
+        defaultValue: false,
+        input: false,
+      },
+      twoFactorEnabled: {
+        type: "boolean",
+        required: true,
+        defaultValue: false,
+        input: false,
+      },
+    },
+  },
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 8,
