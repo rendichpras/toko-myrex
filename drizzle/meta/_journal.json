@@ -22,6 +22,13 @@
       "when": 1787594476960,
       "tag": "0002_rich_venom",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1787599492881,
+      "tag": "0003_robust_jetstream",
+      "breakpoints": true
     }
   ]
 }

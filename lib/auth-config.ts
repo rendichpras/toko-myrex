@@ -107,6 +107,7 @@ export const auth = betterAuth({
     revokeSessionsOnPasswordReset: true,
     sendResetPassword: async ({ user, url }) => {
       queueAuthEmail({
+        category: "password_reset",
         to: user.email,
         subject: "Atur ulang kata sandi Toko Myrex",
         text: `Atur ulang kata sandi Toko Myrex melalui tautan ini: ${url}\n\nAbaikan email ini jika Anda tidak meminta pengaturan ulang kata sandi.`,
@@ -128,6 +129,7 @@ export const auth = betterAuth({
       url.searchParams.set("token", token)
 
       queueAuthEmail({
+        category: "email_verification",
         to: user.email,
         subject: "Verifikasi email Toko Myrex",
         text: `Verifikasi email akun Toko Myrex melalui tautan ini: ${url}\n\nAbaikan email ini jika Anda tidak membuat akun atau mencoba masuk ke Toko Myrex.`,
