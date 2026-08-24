@@ -1,13 +1,14 @@
 import { betterAuth } from "better-auth"
 import { drizzleAdapter } from "better-auth/adapters/drizzle"
 import { nextCookies } from "better-auth/next-js"
-import { admin, twoFactor } from "better-auth/plugins"
+import { admin, haveIBeenPwned, twoFactor } from "better-auth/plugins"
 import {
   APIError,
   createAuthMiddleware,
   getAuthoritativeSessionFromCtx,
 } from "better-auth/api"
 
+import { compromisedPasswordMessage } from "@/lib/auth-error"
 import { db } from "@/lib/db"
 import * as schema from "@/lib/db/schema"
 import { queueAuthEmail } from "@/lib/email"
@@ -157,6 +158,9 @@ export const auth = betterAuth({
     }),
   },
   plugins: [
+    haveIBeenPwned({
+      customPasswordCompromisedMessage: compromisedPasswordMessage,
+    }),
     admin({
       defaultRole: "user",
       adminRoles: ["admin"],

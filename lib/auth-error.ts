@@ -6,6 +6,9 @@ type AuthClientError = {
 export const authConnectionErrorMessage =
   "Tidak dapat terhubung. Periksa koneksi internet, lalu coba lagi."
 
+export const compromisedPasswordMessage =
+  "Kata sandi ini pernah ditemukan dalam kebocoran data. Gunakan kata sandi lain."
+
 export function getAuthErrorMessage(
   error: AuthClientError,
   fallback: string
@@ -15,6 +18,8 @@ export function getAuthErrorMessage(
   }
 
   switch (error.code) {
+    case "PASSWORD_COMPROMISED":
+      return compromisedPasswordMessage
     case "EMAIL_NOT_VERIFIED":
       return "Email belum diverifikasi. Buka tautan verifikasi terbaru yang dikirim melalui email."
     case "INVALID_EMAIL_OR_PASSWORD":
