@@ -31,7 +31,7 @@ export function EmailVerificationCard({ token }: { token: string }) {
         setVerificationError(
           getAuthErrorMessage(
             error,
-            "Tidak dapat memverifikasi email. Buka tautan terbaru, lalu coba lagi."
+            "Email belum diverifikasi. Buka tautan terbaru, lalu coba lagi."
           )
         )
         return
@@ -49,7 +49,7 @@ export function EmailVerificationCard({ token }: { token: string }) {
     return (
       <AuthPanel
         title="Buka tautan verifikasi"
-        description="Buka tautan verifikasi terbaru yang dikirim melalui email."
+        description="Gunakan tautan verifikasi terbaru yang kami kirim melalui email."
       >
         <Button
           variant="outline"
@@ -67,7 +67,7 @@ export function EmailVerificationCard({ token }: { token: string }) {
     return (
       <AuthPanel
         title="Email terverifikasi"
-        description="Akun Toko Myrex siap digunakan."
+        description="Akun Toko Myrex Anda siap digunakan."
       >
         <Button
           size="lg"
@@ -83,7 +83,7 @@ export function EmailVerificationCard({ token }: { token: string }) {
   return (
     <AuthPanel
       title="Verifikasi email"
-      description="Verifikasi email untuk mengaktifkan akun."
+      description="Konfirmasi alamat email untuk mengaktifkan akun Anda."
       footer={
         <Button
           variant="link"
@@ -107,7 +107,7 @@ export function EmailVerificationCard({ token }: { token: string }) {
           {isVerifying ? (
             <>
               <Spinner aria-hidden="true" />
-              Memverifikasi...
+              Memverifikasi email
             </>
           ) : (
             "Verifikasi email"

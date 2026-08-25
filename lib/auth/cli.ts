@@ -4,9 +4,9 @@ import { drizzle } from "drizzle-orm/node-postgres"
 
 import { createAuth } from "@/lib/auth/config"
 import { createDatabasePool } from "@/lib/db/pool"
-import * as schema from "@/lib/db/schema/index"
+import * as authSchema from "@/lib/db/schema/auth"
 
 const pool = createDatabasePool({ allowExitOnIdle: true })
-const db = drizzle({ client: pool, schema })
+const db = drizzle({ client: pool, schema: authSchema })
 
 export const auth = createAuth(db)

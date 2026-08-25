@@ -13,7 +13,7 @@ import { getSession } from "@/lib/auth/session"
 
 export const metadata: Metadata = {
   title: "Verifikasi dua langkah | Toko Myrex",
-  description: "Selesaikan proses masuk dengan verifikasi dua langkah.",
+  description: "Konfirmasi identitas Anda untuk masuk ke Toko Myrex.",
 }
 
 export default async function TwoFactorVerificationPage({
@@ -44,7 +44,7 @@ export default async function TwoFactorVerificationPage({
   return (
     <AuthPanel
       title="Verifikasi identitas"
-      description="Masukkan kode dari aplikasi autentikator untuk masuk."
+      description="Masukkan kode dari aplikasi autentikator Anda."
       footer={
         <Link
           href={`/masuk?next=${encodeURIComponent(redirectTo)}`}

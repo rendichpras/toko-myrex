@@ -6,7 +6,7 @@ type AuthenticationPage = "sign-in" | "sign-up"
 
 const authenticationLinks = [
   { href: "/masuk", label: "Masuk", page: "sign-in" },
-  { href: "/daftar", label: "Daftar", page: "sign-up" },
+  { href: "/daftar", label: "Buat akun", page: "sign-up" },
 ] as const
 
 export function AuthNavigation({
@@ -16,7 +16,7 @@ export function AuthNavigation({
 }) {
   return (
     <nav
-      aria-label="Masuk atau daftar"
+      aria-label="Akses akun"
       className="grid h-10 grid-cols-2 border bg-muted p-1"
     >
       {authenticationLinks.map((link) => {

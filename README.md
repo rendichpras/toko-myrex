@@ -9,7 +9,7 @@ Prasyarat:
 
 - Bun 1.4 atau versi kompatibel
 - PostgreSQL yang dapat diakses dari mesin lokal
-- akun Resend untuk alur email dan webhook
+- Akun Resend untuk alur email dan webhook
 
 Salin `.env.example` menjadi `.env.local`, lalu isi seluruh nilai yang diperlukan.
 Setelah itu jalankan:
@@ -31,6 +31,8 @@ Aplikasi tersedia di `http://localhost:3000`.
   agar pembaruan melalui CLI tetap aman.
 - `lib/db/` menangani koneksi, schema, dan konfigurasi PostgreSQL.
 - `lib/auth/` menangani konfigurasi Better Auth, sesi, otorisasi, dan validasi.
+- `lib/catalog/` menangani aturan domain, DTO, query, dan mutation katalog
+  produk digital.
 - `lib/email/` menangani pengiriman email serta pencatatan webhook Resend.
 - `drizzle/` berisi migration dan snapshot yang dihasilkan Drizzle Kit.
 
@@ -51,6 +53,28 @@ Untuk menjalankan lint dan type-check sekaligus, gunakan `bun run check`.
 Tidak ada test runner di repository saat ini. Ketika fitur domain pertama mulai
 memiliki aturan bisnis, tambahkan pengujian pada batas tersebut alih-alih menguji
 detail implementasi komponen.
+
+## Standar implementasi
+
+Dasarkan setiap implementasi pada dokumentasi resmi terbaru yang sesuai dengan
+versi dependency proyek. Baca dokumentasi lokal dependency jika tersedia, lalu
+gunakan dokumentasi resmi penerbit sebagai sumber utama untuk API, pola, batasan,
+keamanan, dan keputusan arsitektur. Jangan menetapkan perilaku hanya berdasarkan
+ingatan, asumsi, atau contoh yang tidak dapat diverifikasi.
+
+## Standar copywriting
+
+Semua teks yang terlihat pengguna mengikuti
+[Microsoft Writing Style Guide](https://learn.microsoft.com/en-us/style-guide/welcome/)
+dan disesuaikan secara alami ke bahasa Indonesia. Gunakan kalimat yang singkat,
+jelas, langsung, dan membantu pengguna menentukan tindakan berikutnya.
+
+- Gunakan kapitalisasi gaya kalimat untuk judul, label, tombol, dan status.
+- Mulai label tindakan dengan kata kerja yang spesifik.
+- Jelaskan masalah dan cara memperbaikinya dalam pesan kesalahan.
+- Gunakan istilah yang sama di seluruh antarmuka, seperti `draf`, `diterbitkan`,
+  dan `diarsipkan`.
+- Pastikan tautan dan label aksesibilitas tetap bermakna tanpa konteks visual.
 
 ## Perintah operasional
 

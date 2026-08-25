@@ -52,7 +52,7 @@ export function AdminUserMenu({ user }: AdminUserMenuProps) {
       const { error } = await authClient.signOut()
 
       if (error) {
-        setErrorMessage("Tidak dapat keluar. Coba lagi.")
+        setErrorMessage("Anda belum keluar. Coba lagi.")
         setIsSigningOut(false)
         return
       }
@@ -107,7 +107,7 @@ export function AdminUserMenu({ user }: AdminUserMenuProps) {
             onClick={signOut}
           >
             <LogOut aria-hidden="true" />
-            {isSigningOut ? "Keluar..." : "Keluar"}
+            {isSigningOut ? "Sedang keluar" : "Keluar"}
           </DropdownMenuItem>
         </DropdownMenuGroup>
         {errorMessage ? (

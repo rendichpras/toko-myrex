@@ -12,7 +12,7 @@ export function AuthSubmitButton({
   children,
   disabled,
   pending,
-  pendingLabel = "Memproses...",
+  pendingLabel = "Memproses",
   ...props
 }: AuthSubmitButtonProps) {
   return (

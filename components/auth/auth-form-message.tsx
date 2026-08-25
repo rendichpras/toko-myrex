@@ -1,6 +1,6 @@
 import { CircleAlert, CircleCheck } from "lucide-react"
 
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 type AuthFormMessageProps = {
   message: string
@@ -20,9 +20,9 @@ export function AuthFormMessage({
     <Alert
       role={isSuccess ? "status" : "alert"}
       variant={isSuccess ? "default" : "destructive"}
-      aria-label={title ?? (isSuccess ? "Berhasil" : "Terjadi kesalahan")}
     >
       <Icon aria-hidden="true" />
+      {title ? <AlertTitle>{title}</AlertTitle> : null}
       <AlertDescription>{message}</AlertDescription>
     </Alert>
   )

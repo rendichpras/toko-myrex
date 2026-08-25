@@ -13,7 +13,7 @@ export default function SignUpPage() {
   return (
     <AuthPanel
       title="Buat akun Toko Myrex"
-      description="Lengkapi nama, email, dan kata sandi untuk membuat akun."
+      description="Masukkan nama, email, dan kata sandi Anda."
       navigation={<AuthNavigation activePage="sign-up" />}
     >
       <SignUpForm />

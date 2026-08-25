@@ -10,10 +10,10 @@ import {
 } from "better-auth/api"
 
 import { compromisedPasswordMessage } from "@/lib/auth/errors"
-import * as schema from "@/lib/db/schema/index"
 import { hasUserRole } from "@/lib/auth/roles"
+import * as authSchema from "@/lib/db/schema/auth"
 
-type AuthDatabase = NodePgDatabase<typeof schema>
+type AuthDatabase = NodePgDatabase<typeof authSchema>
 
 function readAuthSecret() {
   const secret = process.env.BETTER_AUTH_SECRET
@@ -76,7 +76,7 @@ export const createAuth = (database: AuthDatabase) => betterAuth({
   trustedOrigins: listTrustedAuthOrigins(),
   database: drizzleAdapter(database, {
     provider: "pg",
-    schema,
+    schema: authSchema,
   }),
   user: {
     additionalFields: {
@@ -123,12 +123,12 @@ export const createAuth = (database: AuthDatabase) => betterAuth({
         category: "password_reset",
         to: user.email,
         subject: "Atur ulang kata sandi Toko Myrex",
-        text: `Atur ulang kata sandi Toko Myrex melalui tautan ini: ${url}\n\nAbaikan email ini jika Anda tidak meminta pengaturan ulang kata sandi.`,
+        text: `Buat kata sandi baru untuk akun Toko Myrex melalui tautan berikut:\n${url}\n\nAbaikan email ini jika Anda tidak meminta tautan tersebut.`,
         html: buildAuthEmailHtml({
-          description: "Atur ulang kata sandi akun Toko Myrex.",
-          label: "Atur ulang kata sandi",
+          description: "Buat kata sandi baru untuk akun Toko Myrex.",
+          label: "Buat kata sandi baru",
           notice:
-            "Abaikan email ini jika Anda tidak meminta pengaturan ulang kata sandi.",
+            "Abaikan email ini jika Anda tidak meminta tautan tersebut.",
           url,
         }),
       })
@@ -147,12 +147,12 @@ export const createAuth = (database: AuthDatabase) => betterAuth({
         category: "email_verification",
         to: user.email,
         subject: "Verifikasi email Toko Myrex",
-        text: `Verifikasi email akun Toko Myrex melalui tautan ini: ${url}\n\nAbaikan email ini jika Anda tidak membuat akun atau mencoba masuk ke Toko Myrex.`,
+        text: `Verifikasi alamat email Anda untuk mengaktifkan akun Toko Myrex:\n${url}\n\nAbaikan email ini jika Anda tidak membuat akun atau mencoba masuk.`,
         html: buildAuthEmailHtml({
-          description: "Verifikasi email akun Toko Myrex.",
+          description: "Verifikasi alamat email Anda untuk mengaktifkan akun Toko Myrex.",
           label: "Verifikasi email",
           notice:
-            "Abaikan email ini jika Anda tidak membuat akun atau mencoba masuk ke Toko Myrex.",
+            "Abaikan email ini jika Anda tidak membuat akun atau mencoba masuk.",
           url: url.toString(),
         }),
       })

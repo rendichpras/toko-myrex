@@ -65,13 +65,13 @@ export function TwoFactorSetupForm({ redirectTo }: { redirectTo: string }) {
 
       if (error) {
         if (error.code === "INVALID_PASSWORD") {
-          setFieldError("Kata sandi tidak cocok.")
+          setFieldError("Kata sandi salah. Masukkan kembali kata sandi akun.")
           focusFirstInvalidField(event.currentTarget)
         } else {
           setFormError(
             getAuthErrorMessage(
               error,
-              "Tidak dapat menyiapkan verifikasi dua langkah. Coba lagi."
+              "Verifikasi dua langkah belum disiapkan. Coba lagi."
             )
           )
         }
@@ -79,7 +79,7 @@ export function TwoFactorSetupForm({ redirectTo }: { redirectTo: string }) {
       }
 
       if (!enrollmentData || enrollmentData.method !== "totp") {
-        setFormError("Tidak dapat menyiapkan aplikasi autentikator. Coba lagi.")
+        setFormError("Aplikasi autentikator belum terhubung. Coba lagi.")
         return
       }
 
@@ -118,7 +118,7 @@ export function TwoFactorSetupForm({ redirectTo }: { redirectTo: string }) {
       if (error) {
         const errorMessage = getAuthErrorMessage(
           error,
-          "Tidak dapat memverifikasi kode. Coba lagi."
+          "Kode belum diverifikasi. Coba lagi."
         )
 
         if (error.code === "INVALID_CODE") {
@@ -144,7 +144,7 @@ export function TwoFactorSetupForm({ redirectTo }: { redirectTo: string }) {
       setClipboardStatus(successMessage)
     } catch {
       setClipboardStatus(
-        "Tidak dapat menyalin. Pilih dan salin teks secara manual."
+        "Teks belum disalin. Pilih teks, lalu salin secara manual."
       )
     }
   }
@@ -177,14 +177,14 @@ export function TwoFactorSetupForm({ redirectTo }: { redirectTo: string }) {
             required
           />
           <FieldDescription id="two-factor-password-description">
-            Masukkan kata sandi untuk melanjutkan.
+            Konfirmasi kata sandi akun Anda.
           </FieldDescription>
           <FieldError id="two-factor-password-error">{fieldError}</FieldError>
         </Field>
 
         {formError ? <AuthFormMessage message={formError} /> : null}
 
-        <AuthSubmitButton pending={isSubmitting} pendingLabel="Menyiapkan...">
+        <AuthSubmitButton pending={isSubmitting} pendingLabel="Menyiapkan">
           Siapkan aplikasi autentikator
         </AuthSubmitButton>
       </form>
@@ -204,8 +204,8 @@ export function TwoFactorSetupForm({ redirectTo }: { redirectTo: string }) {
         <div className="grid gap-3 text-center">
           <p className="text-sm font-medium">Pindai kode QR</p>
           <p className="text-xs text-muted-foreground">
-            Pindai dengan aplikasi autentikator, seperti Microsoft Authenticator
-            atau Google Authenticator.
+            Pindai dengan Microsoft Authenticator, Google Authenticator, atau
+            aplikasi autentikator lainnya.
           </p>
           <div className="mx-auto w-48 bg-background p-3 ring-1 ring-border">
             <QRCode
@@ -222,7 +222,7 @@ export function TwoFactorSetupForm({ redirectTo }: { redirectTo: string }) {
         {setupKey ? (
           <div className="grid gap-2">
             <p className="text-xs text-muted-foreground">
-              Tidak bisa memindai? Masukkan kunci penyiapan secara manual.
+              Tidak dapat memindai? Masukkan kunci penyiapan.
             </p>
             <code className="break-all border bg-muted p-2 text-center font-mono text-xs">
               {setupKey}
@@ -267,7 +267,7 @@ export function TwoFactorSetupForm({ redirectTo }: { redirectTo: string }) {
             required
           />
           <FieldDescription id="two-factor-enrollment-code-description">
-            Masukkan 6 digit dari aplikasi untuk menyelesaikan aktivasi.
+            Masukkan kode 6 digit terbaru dari aplikasi autentikator.
           </FieldDescription>
           <FieldError id="two-factor-enrollment-code-error">
             {fieldError}
@@ -281,7 +281,7 @@ export function TwoFactorSetupForm({ redirectTo }: { redirectTo: string }) {
         ) : null}
         {formError ? <AuthFormMessage message={formError} /> : null}
 
-        <AuthSubmitButton pending={isSubmitting} pendingLabel="Memverifikasi...">
+        <AuthSubmitButton pending={isSubmitting} pendingLabel="Memverifikasi">
           Aktifkan verifikasi dua langkah
         </AuthSubmitButton>
       </form>
@@ -292,7 +292,7 @@ export function TwoFactorSetupForm({ redirectTo }: { redirectTo: string }) {
     <div className="grid gap-5">
       <AuthFormMessage
         variant="success"
-        message="Verifikasi dua langkah aktif."
+        message="Verifikasi dua langkah sudah aktif."
       />
 
       <div className="grid gap-3">

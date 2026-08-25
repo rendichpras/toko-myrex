@@ -4,7 +4,7 @@ import { EmailVerificationCard } from "@/components/auth/email-verification-card
 
 export const metadata: Metadata = {
   title: "Verifikasi email | Toko Myrex",
-  description: "Verifikasi email untuk mengaktifkan akun Toko Myrex.",
+  description: "Konfirmasi alamat email untuk mengaktifkan akun Toko Myrex.",
 }
 
 type VerifyEmailPageProps = {

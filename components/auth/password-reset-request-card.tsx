@@ -61,7 +61,7 @@ export function PasswordResetRequestCard() {
         setFormError(
           getAuthErrorMessage(
             error,
-            "Tidak dapat mengirim tautan. Coba lagi."
+            "Tautan belum dikirim. Coba lagi."
           )
         )
         return
@@ -80,8 +80,8 @@ export function PasswordResetRequestCard() {
       title={resetLinkSent ? "Periksa email" : "Atur ulang kata sandi"}
       description={
         resetLinkSent
-          ? "Buka tautan dalam email untuk membuat kata sandi baru."
-          : "Masukkan email untuk menerima tautan pengaturan ulang kata sandi."
+          ? "Gunakan tautan dalam email untuk membuat kata sandi baru."
+          : "Masukkan email akun Anda untuk menerima tautan."
       }
       footer={
         <Button
@@ -96,7 +96,7 @@ export function PasswordResetRequestCard() {
       {resetLinkSent ? (
         <AuthFormMessage
           variant="success"
-          message="Jika email terhubung ke akun, tautan telah dikirim. Periksa kotak masuk dan folder spam."
+          message="Jika email terdaftar, kami telah mengirim tautan. Periksa kotak masuk dan folder spam Anda."
         />
       ) : (
         <form
@@ -139,9 +139,9 @@ export function PasswordResetRequestCard() {
 
           <AuthSubmitButton
             pending={isSendingResetLink}
-            pendingLabel="Mengirim tautan..."
+            pendingLabel="Mengirim tautan"
           >
-            Kirim tautan pengaturan ulang
+            Kirim tautan
           </AuthSubmitButton>
         </form>
       )}

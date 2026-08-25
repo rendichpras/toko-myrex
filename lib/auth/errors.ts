@@ -4,7 +4,7 @@ type AuthClientError = {
 }
 
 export const authConnectionErrorMessage =
-  "Tidak dapat terhubung. Periksa koneksi internet, lalu coba lagi."
+  "Layanan belum dapat dijangkau. Periksa koneksi internet, lalu coba lagi."
 
 export const compromisedPasswordMessage =
   "Kata sandi ini pernah ditemukan dalam kebocoran data. Gunakan kata sandi lain."
@@ -21,7 +21,7 @@ export function getAuthErrorMessage(
     case "PASSWORD_COMPROMISED":
       return compromisedPasswordMessage
     case "EMAIL_NOT_VERIFIED":
-      return "Email belum diverifikasi. Buka tautan verifikasi terbaru yang dikirim melalui email."
+      return "Email belum diverifikasi. Gunakan tautan verifikasi terbaru yang dikirim melalui email."
     case "INVALID_EMAIL_OR_PASSWORD":
     case "INVALID_PASSWORD":
     case "USER_NOT_FOUND":
@@ -39,7 +39,7 @@ export function getAuthErrorMessage(
       return "Aktifkan verifikasi dua langkah untuk mengakses fitur admin."
     case "INVALID_TOKEN":
     case "TOKEN_EXPIRED":
-      return "Tautan ini tidak valid atau sudah kedaluwarsa. Minta tautan baru."
+      return "Tautan ini tidak berlaku lagi. Minta tautan baru."
     default:
       return fallback
   }

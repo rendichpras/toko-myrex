@@ -86,7 +86,7 @@ export function NewPasswordCard({ token }: { token: string }) {
         setFormError(
           getAuthErrorMessage(
             error,
-            "Tidak dapat memperbarui kata sandi. Minta tautan baru, lalu coba lagi."
+            "Kata sandi belum diperbarui. Minta tautan baru, lalu coba lagi."
           )
         )
         return
@@ -103,8 +103,8 @@ export function NewPasswordCard({ token }: { token: string }) {
   if (!token) {
     return (
       <AuthPanel
-        title="Tautan tidak dapat digunakan"
-        description="Tautan ini tidak valid atau sudah kedaluwarsa. Minta tautan baru."
+        title="Tautan tidak berlaku"
+        description="Tautan ini tidak berlaku lagi. Minta tautan baru."
       >
         <Button
           size="lg"
@@ -121,7 +121,7 @@ export function NewPasswordCard({ token }: { token: string }) {
     return (
       <AuthPanel
         title="Kata sandi diperbarui"
-        description="Masuk menggunakan kata sandi baru."
+        description="Gunakan kata sandi baru untuk masuk."
       >
         <Button
           size="lg"
@@ -218,7 +218,7 @@ export function NewPasswordCard({ token }: { token: string }) {
             Berisi 8–128 karakter
           </PasswordRule>
           <PasswordRule valid={matches}>
-            Kata sandi cocok
+            Kedua kata sandi sama
           </PasswordRule>
         </ul>
 
@@ -226,7 +226,7 @@ export function NewPasswordCard({ token }: { token: string }) {
 
         <AuthSubmitButton
           pending={isUpdatingPassword}
-          pendingLabel="Memperbarui..."
+          pendingLabel="Memperbarui kata sandi"
         >
           Perbarui kata sandi
         </AuthSubmitButton>

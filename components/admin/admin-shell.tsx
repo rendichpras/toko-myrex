@@ -97,6 +97,12 @@ export function AdminShell({ children, user }: AdminShellProps) {
       .reverse()
       .find((destination) => isRouteActive(pathname, destination.href)) ??
     adminNavigationItems[0]
+  const currentSubpage =
+    pathname === "/admin/produk/baru"
+      ? "Produk baru"
+      : /^\/admin\/produk\/[^/]+$/.test(pathname)
+        ? "Edit produk"
+        : null
 
   return (
     <TooltipProvider>
@@ -137,16 +143,16 @@ export function AdminShell({ children, user }: AdminShellProps) {
             </SidebarMenu>
           </SidebarFooter>
           <SidebarRail
-            aria-label="Buka atau tutup menu admin"
-            title="Buka atau tutup menu admin"
+            aria-label="Tampilkan atau sembunyikan menu admin"
+            title="Tampilkan atau sembunyikan menu admin"
           />
         </Sidebar>
 
-        <SidebarInset>
+        <SidebarInset className="min-w-0">
           <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4 sm:px-6">
             <SidebarTrigger
-              aria-label="Buka atau tutup menu admin"
-              title="Buka atau tutup menu admin"
+              aria-label="Tampilkan atau sembunyikan menu admin"
+              title="Tampilkan atau sembunyikan menu admin"
             />
             <Breadcrumb>
               <BreadcrumbList>
@@ -156,14 +162,30 @@ export function AdminShell({ children, user }: AdminShellProps) {
                   </BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
-                <BreadcrumbItem>
-                  <BreadcrumbPage>{currentSection.label}</BreadcrumbPage>
-                </BreadcrumbItem>
+                {currentSubpage ? (
+                  <>
+                    <BreadcrumbItem>
+                      <BreadcrumbLink
+                        render={<Link href={currentSection.href} />}
+                      >
+                        {currentSection.label}
+                      </BreadcrumbLink>
+                    </BreadcrumbItem>
+                    <BreadcrumbSeparator />
+                    <BreadcrumbItem>
+                      <BreadcrumbPage>{currentSubpage}</BreadcrumbPage>
+                    </BreadcrumbItem>
+                  </>
+                ) : (
+                  <BreadcrumbItem>
+                    <BreadcrumbPage>{currentSection.label}</BreadcrumbPage>
+                  </BreadcrumbItem>
+                )}
               </BreadcrumbList>
             </Breadcrumb>
           </header>
 
-          <div className="flex-1 overflow-auto px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+          <div className="min-w-0 flex-1 overflow-auto px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
             {children}
           </div>
         </SidebarInset>

@@ -65,7 +65,7 @@ export function SignUpForm() {
         setFormError(
           getAuthErrorMessage(
             error,
-            "Tidak dapat membuat akun. Coba lagi."
+            "Akun belum dibuat. Coba lagi."
           )
         )
         return
@@ -84,7 +84,7 @@ export function SignUpForm() {
       <div className="grid gap-4">
         <AuthFormMessage
           variant="success"
-          message="Buka tautan verifikasi yang dikirim melalui email. Periksa folder spam jika pesan tidak terlihat."
+          message="Kami telah mengirim tautan verifikasi. Periksa kotak masuk dan folder spam Anda."
         />
         <Button
           variant="outline"
@@ -222,7 +222,7 @@ export function SignUpForm() {
 
       <AuthSubmitButton
         pending={isCreatingAccount}
-        pendingLabel="Membuat akun..."
+        pendingLabel="Membuat akun"
       >
         Buat akun
       </AuthSubmitButton>

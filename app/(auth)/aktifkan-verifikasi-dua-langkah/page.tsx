@@ -10,7 +10,7 @@ const setupPath = "/aktifkan-verifikasi-dua-langkah"
 
 export const metadata: Metadata = {
   title: "Aktifkan verifikasi dua langkah | Toko Myrex",
-  description: "Lindungi panel admin Toko Myrex dengan aplikasi autentikator.",
+  description: "Tambahkan perlindungan untuk akun admin Toko Myrex.",
 }
 
 export default async function TwoFactorSetupPage({
@@ -30,7 +30,7 @@ export default async function TwoFactorSetupPage({
   return (
     <AuthPanel
       title="Aktifkan verifikasi dua langkah"
-      description="Hubungkan aplikasi autentikator untuk melindungi panel admin."
+      description="Hubungkan aplikasi autentikator untuk melindungi akun Anda."
     >
       <TwoFactorSetupForm redirectTo={redirectTo} />
     </AuthPanel>

@@ -4,7 +4,7 @@ import { PasswordResetRequestCard } from "@/components/auth/password-reset-reque
 
 export const metadata: Metadata = {
   title: "Atur ulang kata sandi | Toko Myrex",
-  description: "Minta tautan untuk mengatur ulang kata sandi Toko Myrex.",
+  description: "Dapatkan tautan untuk membuat kata sandi baru.",
 }
 
 export default function ForgotPasswordPage() {

@@ -56,7 +56,7 @@ export function SignInForm({ redirectTo }: { redirectTo?: string }) {
 
       if (error) {
         setFormError(
-          getAuthErrorMessage(error, "Tidak dapat masuk. Coba lagi.")
+          getAuthErrorMessage(error, "Anda belum masuk. Coba lagi.")
         )
         return
       }
@@ -166,7 +166,7 @@ export function SignInForm({ redirectTo }: { redirectTo?: string }) {
 
       {formError ? <AuthFormMessage message={formError} /> : null}
 
-      <AuthSubmitButton pending={isSigningIn} pendingLabel="Masuk...">
+      <AuthSubmitButton pending={isSigningIn} pendingLabel="Sedang masuk">
         Masuk
       </AuthSubmitButton>
     </form>

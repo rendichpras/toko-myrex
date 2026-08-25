@@ -64,8 +64,8 @@ export function TwoFactorChallengeForm({
         const errorMessage = getAuthErrorMessage(
           verification.error,
           useBackupCode
-            ? "Tidak dapat memverifikasi kode cadangan. Coba lagi."
-            : "Tidak dapat memverifikasi kode. Coba lagi."
+            ? "Kode cadangan belum diverifikasi. Coba lagi."
+            : "Kode belum diverifikasi. Coba lagi."
         )
 
         if (
@@ -139,7 +139,7 @@ export function TwoFactorChallengeForm({
         <FieldDescription id="two-factor-code-description">
           {useBackupCode
             ? "Gunakan kode cadangan yang belum pernah dipakai."
-            : "Buka aplikasi autentikator yang terhubung ke akun."}
+            : "Masukkan kode terbaru dari aplikasi autentikator Anda."}
         </FieldDescription>
         <FieldError id="two-factor-code-error">{fieldError}</FieldError>
       </Field>
@@ -148,7 +148,7 @@ export function TwoFactorChallengeForm({
 
       <AuthSubmitButton
         pending={isVerifying}
-        pendingLabel="Memverifikasi..."
+        pendingLabel="Memverifikasi"
       >
         Verifikasi dan masuk
       </AuthSubmitButton>

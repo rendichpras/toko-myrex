@@ -18,7 +18,7 @@ export default async function SignInPage({
   return (
     <AuthPanel
       title="Masuk ke Toko Myrex"
-      description="Masukkan email dan kata sandi untuk melanjutkan."
+      description="Masukkan email dan kata sandi Anda."
       navigation={<AuthNavigation activePage="sign-in" />}
     >
       <SignInForm redirectTo={requestedPath || undefined} />
