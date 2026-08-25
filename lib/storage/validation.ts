@@ -1,26 +1,16 @@
 import { z } from "zod"
 
+import { formatBytes } from "@/lib/format"
 import { getStorageConfig } from "@/lib/storage/config"
+import {
+  ALLOWED_EXTENSIONS_BY_MIME_TYPE,
+  COVER_MIME_TYPES,
+  FILE_EXTENSION_BY_MIME_TYPE,
+} from "@/lib/storage/file-policy"
 
 export const COVER_MAX_BYTES = 5 * 1024 * 1024
 
-const coverMimeTypes = new Set(["image/jpeg", "image/png", "image/webp"])
-const extensionByMimeType: Record<string, string> = {
-  "application/pdf": "pdf",
-  "application/x-zip-compressed": "zip",
-  "application/zip": "zip",
-  "image/jpeg": "jpg",
-  "image/png": "png",
-  "image/webp": "webp",
-}
-const allowedExtensionsByMimeType: Record<string, ReadonlySet<string>> = {
-  "application/pdf": new Set(["pdf"]),
-  "application/x-zip-compressed": new Set(["zip"]),
-  "application/zip": new Set(["zip"]),
-  "image/jpeg": new Set(["jpg", "jpeg"]),
-  "image/png": new Set(["png"]),
-  "image/webp": new Set(["webp"]),
-}
+const coverMimeTypes = new Set<string>(COVER_MIME_TYPES)
 
 const safeFileNameSchema = z
   .string()
@@ -71,14 +61,14 @@ export type UploadKind = z.output<typeof completeUploadSchema>["kind"]
 export function validateUploadRequest(
   input: z.output<typeof createUploadIntentSchema>
 ) {
-  const extension = extensionByMimeType[input.mimeType]
+  const extension = FILE_EXTENSION_BY_MIME_TYPE[input.mimeType]
 
   if (!extension) {
     return { success: false as const, message: "Jenis file tidak didukung." }
   }
 
   const originalExtension = input.originalName.split(".").at(-1)?.toLowerCase()
-  const allowedExtensions = allowedExtensionsByMimeType[input.mimeType]
+  const allowedExtensions = ALLOWED_EXTENSIONS_BY_MIME_TYPE[input.mimeType]
 
   if (!originalExtension || !allowedExtensions?.has(originalExtension)) {
     return {
@@ -151,16 +141,4 @@ export function mimeTypesMatch(declared: string, detected: string) {
     (declared === "application/zip" &&
       detected === "application/x-zip-compressed")
   )
-}
-
-export function formatBytes(bytes: number) {
-  if (bytes < 1024) {
-    return `${bytes} B`
-  }
-
-  if (bytes < 1024 * 1024) {
-    return `${Math.round(bytes / 1024)} KB`
-  }
-
-  return `${new Intl.NumberFormat("id-ID", { maximumFractionDigits: 1 }).format(bytes / (1024 * 1024))} MB`
 }

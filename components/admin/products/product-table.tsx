@@ -102,10 +102,6 @@ export function ProductTable({
             <TableRow key={item.id}>
               <TableCell className="hidden sm:table-cell">
                 <span
-                  role="img"
-                  aria-label={
-                    item.cover ? "Gambar sampul tersedia" : "Belum ada gambar sampul"
-                  }
                   title={
                     item.cover ? "Gambar sampul tersedia" : "Belum ada gambar sampul"
                   }
@@ -114,7 +110,7 @@ export function ProductTable({
                   {item.cover?.publicUrl ? (
                     <Image
                       src={item.cover.publicUrl}
-                      alt={item.cover.altText ?? ""}
+                      alt=""
                       width={36}
                       height={36}
                       className="size-9 object-cover"

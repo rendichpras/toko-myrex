@@ -30,6 +30,9 @@ Pengunggahan produk menggunakan dua bucket Cloudflare R2:
   diakses publik.
 - `R2_PRIVATE_BUCKET` menyimpan staging unggahan dan seluruh file digital.
 
+Nama kedua bucket wajib berbeda. `R2_MEDIA_PUBLIC_URL` wajib menggunakan HTTPS,
+dan bucket privat tidak boleh diberi akses publik.
+
 Isi variabel `R2_*` dan kebijakan file produk di `.env.local`. Atur custom domain
 atau URL publik bucket media pada `R2_MEDIA_PUBLIC_URL`. Bucket privat harus
 memiliki kebijakan CORS untuk origin aplikasi agar browser dapat menjalankan PUT
@@ -55,6 +58,31 @@ rule pada bucket privat untuk menghapus prefix tersebut setelah masa retensi yan
 sesuai. Jangan terapkan rule itu pada prefix `products/`, karena prefix tersebut
 berisi file siap dan riwayat versi produk.
 
+Jalankan rekonsiliasi berkala untuk mengarsipkan unggahan kedaluwarsa dan
+menghapus objek yatim yang tidak lagi direferensikan database:
+
+```bash
+bun run catalog:cleanup-uploads
+```
+
+Atur `UPLOAD_CLEANUP_MIN_AGE_HOURS` sesuai jadwal deployment. Jalankan perintah
+ini melalui scheduler deployment minimal sekali sehari.
+Gunakan `bun run catalog:cleanup-uploads --dry-run` untuk memeriksa kandidat
+tanpa mengubah database atau object storage.
+
+### Pemindaian file produk
+
+File PDF dan ZIP harus dipindai oleh `clamd` sebelum berstatus siap. Hubungkan
+aplikasi ke ClamAV melalui `CLAMAV_HOST`, `CLAMAV_PORT`, dan
+`CLAMAV_TIMEOUT_MS`. Aplikasi menggunakan perintah `INSTREAM`, sehingga
+`StreamMaxLength` pada `clamd.conf` harus lebih besar atau sama dengan
+`PRODUCT_ASSET_MAX_BYTES`.
+
+Jalankan `clamd` dalam jaringan privat. Jangan mengekspos port TCP ClamAV ke
+internet karena protokolnya tidak menyediakan autentikasi atau enkripsi.
+Lihat [dokumentasi resmi protokol ClamD](https://docs.clamav.net/manual/Usage/ClamdProtocol.html)
+untuk konfigurasi socket dan batas stream.
+
 ## Struktur kode
 
 - `app/` berisi route, layout, metadata, dan endpoint HTTP.
@@ -78,10 +106,11 @@ admin tetap diperiksa di server melalui `requireAdmin`; pemeriksaan cookie di
 ```bash
 bun run lint
 bun run typecheck
+bun test
 bun run build
 ```
 
-Untuk menjalankan lint dan type-check sekaligus, gunakan `bun run check`.
+Untuk menjalankan lint, type-check, dan test sekaligus, gunakan `bun run check`.
 
 Tidak ada test runner di repository saat ini. Ketika fitur domain pertama mulai
 memiliki aturan bisnis, tambahkan pengujian pada batas tersebut alih-alih menguji

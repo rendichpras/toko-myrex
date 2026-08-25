@@ -28,6 +28,7 @@ export type ProductMediaDTO = {
   width: number | null
   height: number | null
   altText: string | null
+  rejectionReason: string | null
   position: number
   status: ProductFileStatus
   createdAt: string
@@ -41,6 +42,7 @@ export type ProductAssetDTO = {
   originalName: string
   mimeType: string
   fileSize: number
+  rejectionReason: string | null
   version: number
   status: ProductFileStatus
   createdAt: string
@@ -67,11 +69,33 @@ export type ProductListItemDTO = {
     currency: string
   } | null
   cover: {
-    storageKey: string
     publicUrl: string | null
     altText: string | null
   } | null
 }
+
+export type ProductCoverClientDTO = Pick<
+  ProductMediaDTO,
+  | "id"
+  | "role"
+  | "publicUrl"
+  | "fileSize"
+  | "width"
+  | "height"
+  | "altText"
+  | "rejectionReason"
+  | "status"
+>
+
+export type ProductAssetClientDTO = Pick<
+  ProductAssetDTO,
+  | "id"
+  | "downloadName"
+  | "fileSize"
+  | "version"
+  | "rejectionReason"
+  | "status"
+>
 
 export type ProductListDTO = {
   items: ProductListItemDTO[]

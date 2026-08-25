@@ -179,7 +179,6 @@ export async function listAdminProducts(
             },
       cover: row.coverStorageKey
         ? {
-            storageKey: row.coverStorageKey,
             publicUrl: getPublicMediaUrl(row.coverStorageKey),
             altText: row.coverAltText,
           }
@@ -248,6 +247,7 @@ export async function getAdminProduct(
         width: productMedia.width,
         height: productMedia.height,
         altText: productMedia.altText,
+        rejectionReason: productMedia.rejectionReason,
         position: productMedia.position,
         status: productMedia.status,
         createdAt: productMedia.createdAt,
@@ -264,6 +264,7 @@ export async function getAdminProduct(
         originalName: productAsset.originalName,
         mimeType: productAsset.mimeType,
         fileSize: productAsset.fileSize,
+        rejectionReason: productAsset.rejectionReason,
         version: productAsset.version,
         status: productAsset.status,
         createdAt: productAsset.createdAt,

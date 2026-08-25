@@ -19,7 +19,9 @@ import {
   deleteObject,
   getObject,
   headObject,
+  isAssetScannerConfigured,
   putObject,
+  scanChunksForMalware,
 } from "@/lib/storage"
 import {
   COVER_MAX_BYTES,
@@ -34,7 +36,15 @@ import {
 } from "@/lib/storage/validation"
 
 export class CatalogUploadError extends Error {
-  constructor(message: string) {
+  constructor(
+    message: string,
+    public readonly code:
+      | "invalid_file"
+      | "invalid_state"
+      | "not_ready"
+      | "temporary_failure" = "invalid_state",
+    public readonly retryable = false
+  ) {
     super(message)
     this.name = "CatalogUploadError"
   }
@@ -94,20 +104,28 @@ async function ensureMutableProduct(
 async function markRejected(
   kind: "cover" | "asset",
   uploadId: string,
-  storageKey: string
+  storageKey: string,
+  reason: string
 ) {
   const table = kind === "cover" ? productMedia : productAsset
 
   await db
     .update(table)
-    .set({ status: "rejected", updatedAt: new Date() })
+    .set({
+      status: "rejected",
+      rejectionReason: reason.slice(0, 500),
+      updatedAt: new Date(),
+    })
     .where(eq(table.id, uploadId))
 
   await deleteObject("private", storageKey).catch(() => undefined)
 }
 
 function verificationError(message: string) {
-  return new CatalogUploadError(`${message} Pilih file lain, lalu coba lagi.`)
+  return new CatalogUploadError(
+    `${message} Pilih file lain, lalu coba lagi.`,
+    "invalid_file"
+  )
 }
 
 async function sanitizeCoverImage(bytes: Uint8Array, mimeType: string) {
@@ -181,7 +199,9 @@ async function verifyObjectMetadata({
     metadata = await headObject("private", storageKey)
   } catch {
     throw new CatalogUploadError(
-      "Unggahan belum ditemukan. Unggah file lagi, lalu coba verifikasi."
+      "Unggahan belum ditemukan. Unggah file lagi, lalu coba verifikasi.",
+      "not_ready",
+      true
     )
   }
 
@@ -194,6 +214,16 @@ async function verifyObjectMetadata({
   if (storedMimeType !== expectedMimeType) {
     throw verificationError("Jenis file yang diterima tidak sesuai.")
   }
+
+  if (!metadata.ETag) {
+    throw new CatalogUploadError(
+      "Identitas file belum tersedia. Coba verifikasi lagi.",
+      "not_ready",
+      true
+    )
+  }
+
+  return metadata
 }
 
 async function verifyCover(
@@ -220,6 +250,10 @@ async function verifyCover(
     }
 
     const bytes = await object.Body.transformToByteArray()
+
+    if (bytes.byteLength !== upload.fileSize) {
+      throw verificationError("Ukuran gambar yang dibaca tidak sesuai.")
+    }
     const detected = await fileTypeFromBuffer(bytes)
 
     if (!detected || !mimeTypesMatch(upload.mimeType, detected.mime)) {
@@ -271,6 +305,7 @@ async function verifyCover(
             fileSize: sanitized.data.byteLength,
             width: sanitized.info.width,
             height: sanitized.info.height,
+            rejectionReason: null,
             status: "ready",
             updatedAt: new Date(),
           })
@@ -309,17 +344,16 @@ async function verifyCover(
     return { uploadId: upload.id, status: "ready" }
   } catch (error) {
     if (
-      error instanceof CatalogUploadError &&
-      error.message.endsWith("Pilih file lain, lalu coba lagi.")
+      error instanceof CatalogUploadError && error.code === "invalid_file"
     ) {
-      await markRejected("cover", upload.id, upload.storageKey)
+      await markRejected("cover", upload.id, upload.storageKey, error.message)
     }
 
     throw error
   }
 }
 
-async function readAssetSignatureAndChecksum(storageKey: string) {
+async function readAssetSignatureChecksumAndScan(storageKey: string) {
   const object = await getObject("private", storageKey)
 
   if (!object.Body) {
@@ -331,18 +365,20 @@ async function readAssetSignatureAndChecksum(storageKey: string) {
   let signatureLength = 0
   let bytesRead = 0
 
-  for await (const value of object.Body as AsyncIterable<Uint8Array>) {
-    const chunk = value instanceof Uint8Array ? value : new Uint8Array(value)
-    hash.update(chunk)
-    bytesRead += chunk.byteLength
+  const malwareScan = await scanChunksForMalware(
+    object.Body as AsyncIterable<Uint8Array>,
+    (chunk) => {
+      hash.update(chunk)
+      bytesRead += chunk.byteLength
 
-    if (signatureLength < 8192) {
-      const remaining = 8192 - signatureLength
-      const part = chunk.subarray(0, remaining)
-      signatureChunks.push(part)
-      signatureLength += part.byteLength
+      if (signatureLength < 8192) {
+        const remaining = 8192 - signatureLength
+        const part = chunk.subarray(0, remaining)
+        signatureChunks.push(part)
+        signatureLength += part.byteLength
+      }
     }
-  }
+  )
 
   const signature = new Uint8Array(signatureLength)
   let offset = 0
@@ -357,6 +393,7 @@ async function readAssetSignatureAndChecksum(storageKey: string) {
       detected: await fileTypeFromBuffer(signature),
       checksum: hash.digest("hex"),
       bytesRead,
+      malwareScan,
     }
   } catch {
     throw verificationError("Signature file tidak dapat dibaca.")
@@ -373,16 +410,50 @@ async function verifyAsset(
   productId: string,
   userId: string
 ): Promise<CompletedUploadDTO> {
+  let readyStorageKey: string | null = null
+
   try {
-    await verifyObjectMetadata({
+    if (!isAssetScannerConfigured()) {
+      throw new CatalogUploadError(
+        "Pemindai malware belum tersedia. Hubungi pengelola sistem.",
+        "temporary_failure",
+        true
+      )
+    }
+
+    const metadata = await verifyObjectMetadata({
       storageKey: upload.storageKey,
       expectedSize: upload.fileSize,
       expectedMimeType: upload.mimeType,
     })
 
-    const { detected, checksum, bytesRead } = await readAssetSignatureAndChecksum(
-      upload.storageKey
-    )
+    const extension = upload.storageKey.split(".").at(-1) ?? "bin"
+    const readyKey = `products/${productId}/assets/${randomUUID()}.${extension}`
+    readyStorageKey = readyKey
+
+    try {
+      await copyPrivateObject(
+        upload.storageKey,
+        "private",
+        readyKey,
+        metadata.ETag!
+      )
+    } catch (error) {
+      const statusCode =
+        typeof error === "object" && error !== null && "$metadata" in error
+          ? (error as { $metadata?: { httpStatusCode?: number } }).$metadata
+              ?.httpStatusCode
+          : undefined
+
+      if (statusCode === 412) {
+        throw verificationError("File berubah selama verifikasi.")
+      }
+
+      throw error
+    }
+
+    const { detected, checksum, bytesRead, malwareScan } =
+      await readAssetSignatureChecksumAndScan(readyKey)
 
     if (bytesRead !== upload.fileSize) {
       throw verificationError("Ukuran file yang dibaca tidak sesuai.")
@@ -392,10 +463,9 @@ async function verifyAsset(
       throw verificationError("Signature file tidak sesuai.")
     }
 
-    const extension = upload.storageKey.split(".").at(-1) ?? "bin"
-    const readyStorageKey = `products/${productId}/assets/${randomUUID()}.${extension}`
-
-    await copyPrivateObject(upload.storageKey, "private", readyStorageKey)
+    if (malwareScan.status === "infected") {
+      throw verificationError("Pemindai malware menolak file.")
+    }
 
     try {
       await db.transaction(async (transaction) => {
@@ -404,8 +474,9 @@ async function verifyAsset(
         const [readyAsset] = await transaction
           .update(productAsset)
           .set({
-            storageKey: readyStorageKey,
+            storageKey: readyKey,
             checksumSha256: checksum,
+            rejectionReason: null,
             status: "ready",
             updatedAt: new Date(),
           })
@@ -430,7 +501,7 @@ async function verifyAsset(
           .where(eq(product.id, productId))
       })
     } catch (error) {
-      await deleteObject("private", readyStorageKey).catch(() => undefined)
+      await deleteObject("private", readyKey).catch(() => undefined)
       throw error
     }
 
@@ -438,14 +509,25 @@ async function verifyAsset(
 
     return { uploadId: upload.id, status: "ready" }
   } catch (error) {
-    if (
-      error instanceof CatalogUploadError &&
-      error.message.endsWith("Pilih file lain, lalu coba lagi.")
-    ) {
-      await markRejected("asset", upload.id, upload.storageKey)
+    if (readyStorageKey) {
+      await deleteObject("private", readyStorageKey).catch(() => undefined)
     }
 
-    throw error
+    if (error instanceof CatalogUploadError && error.code === "invalid_file") {
+      await markRejected("asset", upload.id, upload.storageKey, error.message)
+      throw error
+    }
+
+    if (error instanceof CatalogUploadError) {
+      throw error
+    }
+
+    console.error("Pemindaian atau pemindahan file produk gagal.", error)
+    throw new CatalogUploadError(
+      "File belum dapat diverifikasi. Coba lagi.",
+      "temporary_failure",
+      true
+    )
   }
 }
 
@@ -458,6 +540,13 @@ export async function createCatalogUploadIntent(
 
   if (!validation.success) {
     throw new CatalogUploadError(validation.message)
+  }
+
+  if (values.kind === "asset" && !isAssetScannerConfigured()) {
+    throw new CatalogUploadError(
+      "Pemindai malware belum dikonfigurasi.",
+      "invalid_state"
+    )
   }
 
   const storageKey = createStorageKey({
@@ -527,7 +616,12 @@ export async function createCatalogUploadIntent(
       contentType: values.mimeType,
     }
   } catch (error) {
-    await markRejected(values.kind, pendingUpload.id, storageKey)
+    await markRejected(
+      values.kind,
+      pendingUpload.id,
+      storageKey,
+      "URL unggahan tidak dapat dibuat."
+    )
     console.error("URL upload R2 gagal dibuat.", error)
     throw new CatalogUploadError("Unggahan belum dapat dimulai. Coba lagi.")
   }

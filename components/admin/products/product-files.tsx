@@ -1,8 +1,7 @@
 "use client"
 
 import Image from "next/image"
-import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useRef, useState } from "react"
 import {
   CircleAlert,
   FileArchive,
@@ -52,23 +51,27 @@ import {
 } from "@/components/ui/progress"
 import { Spinner } from "@/components/ui/spinner"
 import type {
-  ProductAssetDTO,
-  ProductMediaDTO,
+  ProductAssetClientDTO,
+  ProductCoverClientDTO,
 } from "@/lib/catalog/dto"
+import { formatBytes } from "@/lib/format"
+import { getMimeTypeFromFileName } from "@/lib/storage/file-policy"
 
 type UploadKind = "cover" | "asset"
 
 type UploadState = {
   file: File | null
   progress: number
-  uploading: boolean
+  phase: "idle" | "uploading" | "verifying"
+  uploadId: string | null
   message: string | null
 }
 
 const emptyUploadState: UploadState = {
   file: null,
   progress: 0,
-  uploading: false,
+  phase: "idle",
+  uploadId: null,
   message: null,
 }
 
@@ -85,15 +88,6 @@ const fileStatusVariants = {
   rejected: "destructive",
   archived: "outline",
 } as const
-
-function formatBytes(bytes: number) {
-  return new Intl.NumberFormat("id-ID", {
-    style: "unit",
-    unit: bytes >= 1024 * 1024 ? "megabyte" : "kilobyte",
-    unitDisplay: "short",
-    maximumFractionDigits: 1,
-  }).format(bytes / (bytes >= 1024 * 1024 ? 1024 * 1024 : 1024))
-}
 
 function putFile(
   url: string,
@@ -135,13 +129,14 @@ function RemoveFileButton({
   productId,
   uploadId,
   label,
+  status,
 }: {
   kind: UploadKind
   productId: string
   uploadId: string
   label: string
+  status: ProductAssetClientDTO["status"]
 }) {
-  const router = useRouter()
   const [open, setOpen] = useState(false)
   const [pending, setPending] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
@@ -159,7 +154,6 @@ function RemoveFileButton({
       }
 
       setOpen(false)
-      router.refresh()
     } catch {
       setMessage("File belum dihapus. Coba lagi.")
     } finally {
@@ -184,9 +178,11 @@ function RemoveFileButton({
           <AlertDialogTitle>Hapus file?</AlertDialogTitle>
           <AlertDialogDescription>
             {label} akan dihapus dari produk.{" "}
-            {kind === "asset"
+            {kind === "asset" && status === "ready"
               ? "File siap tetap disimpan secara privat sebagai riwayat versi."
-              : "Tambahkan sampul baru sebelum menerbitkan produk."}
+              : kind === "cover" && status === "ready"
+                ? "Tambahkan sampul baru sebelum menerbitkan produk."
+                : "Unggahan yang belum siap akan dihapus dari penyimpanan."}
           </AlertDialogDescription>
         </AlertDialogHeader>
 
@@ -217,6 +213,7 @@ function RemoveFileButton({
 
 export function ProductFiles({
   assetMaxBytes,
+  assetScannerConfigured,
   assets,
   disabled,
   media,
@@ -225,17 +222,19 @@ export function ProductFiles({
   storageConfigured,
 }: {
   assetMaxBytes: number
-  assets: ProductAssetDTO[]
+  assetScannerConfigured: boolean
+  assets: ProductAssetClientDTO[]
   disabled: boolean
-  media: ProductMediaDTO[]
+  media: ProductCoverClientDTO[]
   productId: string
   productName: string
   storageConfigured: boolean
 }) {
-  const router = useRouter()
+  const coverInputRef = useRef<HTMLInputElement>(null)
+  const assetInputRef = useRef<HTMLInputElement>(null)
   const [cover, setCover] = useState<UploadState>(emptyUploadState)
   const [asset, setAsset] = useState<UploadState>(emptyUploadState)
-  const [altText, setAltText] = useState(productName)
+  const [altTextOverride, setAltTextOverride] = useState<string | null>(null)
   const [downloadName, setDownloadName] = useState("")
   const readyCover = media.find(
     (item) => item.role === "cover" && item.status === "ready"
@@ -248,6 +247,10 @@ export function ProductFiles({
   )
   const visibleAssets = assets.filter((item) => item.status !== "archived")
   const controlsDisabled = disabled || !storageConfigured
+  const coverBusy = cover.phase !== "idle"
+  const assetBusy = asset.phase !== "idle"
+  const assetControlsDisabled = controlsDisabled || !assetScannerConfigured
+  const altText = altTextOverride ?? productName
 
   function selectFile(kind: UploadKind, file: File | null) {
     const setter = kind === "cover" ? setCover : setAsset
@@ -262,78 +265,135 @@ export function ProductFiles({
     const state = kind === "cover" ? cover : asset
     const setState = kind === "cover" ? setCover : setAsset
     const file = state.file
+    const mimeType = file
+      ? file.type || getMimeTypeFromFileName(file.name) || ""
+      : ""
+    let uploadId = state.uploadId
+    let succeeded = false
 
     if (!file) {
-      setState((current) => ({ ...current, message: "Pilih file terlebih dahulu." }))
+      setState((current) => ({
+        ...current,
+        message: "Pilih file terlebih dahulu.",
+      }))
       return
     }
 
     setState((current) => ({
       ...current,
-      progress: 0,
-      uploading: true,
+      progress: current.uploadId ? 100 : 0,
+      phase: current.uploadId ? "verifying" : "uploading",
       message: null,
     }))
 
     try {
-      const intent = await createProductUploadIntent(
-        kind === "cover"
-          ? {
-              kind,
-              productId,
-              originalName: file.name,
-              mimeType: file.type,
-              fileSize: file.size,
-              altText,
-            }
-          : {
-              kind,
-              productId,
-              originalName: file.name,
-              mimeType: file.type,
-              fileSize: file.size,
-              downloadName,
-            }
-      )
+      if (!uploadId) {
+        const intent = await createProductUploadIntent(
+          kind === "cover"
+            ? {
+                kind,
+                productId,
+                originalName: file.name,
+                mimeType,
+                fileSize: file.size,
+                altText,
+              }
+            : {
+                kind,
+                productId,
+                originalName: file.name,
+                mimeType,
+                fileSize: file.size,
+                downloadName,
+              }
+        )
 
-      if (!intent.success) {
-        setState((current) => ({ ...current, message: intent.message }))
-        return
+        if (!intent.success) {
+          setState((current) => ({ ...current, message: intent.message }))
+          return
+        }
+
+        uploadId = intent.data.uploadId
+
+        try {
+          await putFile(
+            intent.data.uploadUrl,
+            file,
+            intent.data.contentType,
+            (progress) => setState((current) => ({ ...current, progress }))
+          )
+        } catch (error) {
+          await removeProductUpload({
+            kind,
+            productId,
+            uploadId,
+          }).catch(() => undefined)
+          uploadId = null
+          throw error
+        }
+
+        setState((current) => ({
+          ...current,
+          phase: "verifying",
+          progress: 100,
+          uploadId,
+        }))
       }
-
-      await putFile(
-        intent.data.uploadUrl,
-        file,
-        intent.data.contentType,
-        (progress) =>
-          setState((current) => ({ ...current, progress }))
-      )
 
       const completed = await completeProductUpload({
         kind,
         productId,
-        uploadId: intent.data.uploadId,
+        uploadId,
       })
 
       if (!completed.success) {
-        setState((current) => ({ ...current, message: completed.message }))
+        if (completed.retryable) {
+          setState((current) => ({
+            ...current,
+            uploadId,
+            message: completed.message,
+          }))
+        } else {
+          setState({ ...emptyUploadState, message: completed.message })
+          const input =
+            kind === "cover" ? coverInputRef.current : assetInputRef.current
+
+          if (input) {
+            input.value = ""
+          }
+
+          if (kind === "asset") {
+            setDownloadName("")
+          }
+        }
+
         return
       }
 
+      succeeded = true
       setState(emptyUploadState)
+      const input =
+        kind === "cover" ? coverInputRef.current : assetInputRef.current
+
+      if (input) {
+        input.value = ""
+      }
+
       if (kind === "asset") {
         setDownloadName("")
       }
-      router.refresh()
     } catch (error) {
       const reason =
         error instanceof Error ? error.message : "Unggahan terputus."
       setState((current) => ({
         ...current,
-        message: `${reason} Periksa koneksi dan CORS bucket, lalu coba lagi.`,
+        uploadId,
+        message: `${reason} Periksa koneksi, lalu coba lagi.`,
       }))
     } finally {
-      setState((current) => ({ ...current, uploading: false }))
+      if (!succeeded) {
+        setState((current) => ({ ...current, phase: "idle" }))
+      }
     }
   }
 
@@ -341,7 +401,9 @@ export function ProductFiles({
     <div className="grid min-w-0 gap-6 lg:grid-cols-2 lg:items-start">
       <Card>
         <CardHeader>
-          <CardTitle>Gambar sampul</CardTitle>
+          <CardTitle role="heading" aria-level={2}>
+            Gambar sampul
+          </CardTitle>
           <CardDescription>
             Tambahkan gambar JPEG, PNG, atau WebP berukuran maksimal 5 MB.
           </CardDescription>
@@ -375,6 +437,7 @@ export function ProductFiles({
                     productId={productId}
                     uploadId={readyCover.id}
                     label="gambar sampul"
+                    status={readyCover.status}
                   />
                 ) : null}
               </div>
@@ -391,6 +454,9 @@ export function ProductFiles({
                   <p className="text-muted-foreground">
                     {formatBytes(item.fileSize)}
                   </p>
+                  {item.rejectionReason ? (
+                    <p className="text-destructive">{item.rejectionReason}</p>
+                  ) : null}
                 </div>
                 <Badge variant={fileStatusVariants[item.status]}>
                   {fileStatusLabels[item.status]}
@@ -401,6 +467,7 @@ export function ProductFiles({
                     productId={productId}
                     uploadId={item.id}
                     label="unggahan sampul"
+                    status={item.status}
                   />
                 ) : null}
               </div>
@@ -409,15 +476,17 @@ export function ProductFiles({
             <Field>
               <FieldLabel htmlFor="cover-file">Pilih gambar</FieldLabel>
               <Input
+                ref={coverInputRef}
                 id="cover-file"
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
-                disabled={controlsDisabled || cover.uploading}
+                disabled={controlsDisabled || coverBusy}
+                aria-describedby="cover-file-description"
                 onChange={(event) =>
                   selectFile("cover", event.target.files?.[0] ?? null)
                 }
               />
-              <FieldDescription>
+              <FieldDescription id="cover-file-description">
                 Gambar baru menggantikan sampul saat ini setelah verifikasi selesai.
               </FieldDescription>
             </Field>
@@ -428,17 +497,23 @@ export function ProductFiles({
                 id="cover-alt"
                 value={altText}
                 maxLength={500}
-                disabled={controlsDisabled || cover.uploading}
-                onChange={(event) => setAltText(event.target.value)}
+                disabled={controlsDisabled || coverBusy}
+                onChange={(event) => {
+                  setAltTextOverride(event.target.value)
+                }}
               />
               <FieldDescription>
                 Jelaskan isi gambar secara singkat untuk pembaca layar.
               </FieldDescription>
             </Field>
 
-            {cover.uploading ? (
+            {coverBusy ? (
               <Progress value={cover.progress}>
-                <ProgressLabel>Mengunggah gambar</ProgressLabel>
+                <ProgressLabel>
+                  {cover.phase === "verifying"
+                    ? "Memverifikasi gambar"
+                    : "Mengunggah gambar"}
+                </ProgressLabel>
                 <ProgressValue>
                   {(_formattedValue, value) => `${value ?? 0}%`}
                 </ProgressValue>
@@ -455,11 +530,19 @@ export function ProductFiles({
 
             <Button
               type="button"
-              disabled={controlsDisabled || cover.uploading || !cover.file}
+              disabled={controlsDisabled || coverBusy || !cover.file}
               onClick={() => upload("cover")}
             >
-              {cover.uploading ? <Spinner aria-hidden="true" /> : <Upload aria-hidden="true" />}
-              {readyCover ? "Ganti sampul" : "Unggah sampul"}
+              {coverBusy ? (
+                <Spinner aria-hidden="true" />
+              ) : (
+                <Upload data-icon="inline-start" aria-hidden="true" />
+              )}
+              {cover.phase === "verifying"
+                ? "Memverifikasi sampul"
+                : readyCover
+                  ? "Ganti sampul"
+                  : "Unggah sampul"}
             </Button>
           </FieldGroup>
         </CardContent>
@@ -467,7 +550,9 @@ export function ProductFiles({
 
       <Card>
         <CardHeader>
-          <CardTitle>File produk</CardTitle>
+          <CardTitle role="heading" aria-level={2}>
+            File produk
+          </CardTitle>
           <CardDescription>
             Tambahkan PDF atau ZIP yang akan diterima pelanggan. Ukuran maksimal{" "}
             {formatBytes(assetMaxBytes)}.
@@ -485,6 +570,11 @@ export function ProductFiles({
                       <p className="truncate text-muted-foreground">
                         Versi {item.version} · {formatBytes(item.fileSize)}
                       </p>
+                      {item.rejectionReason ? (
+                        <p className="text-destructive">
+                          {item.rejectionReason}
+                        </p>
+                      ) : null}
                     </div>
                     <Badge variant={fileStatusVariants[item.status]}>
                       {fileStatusLabels[item.status]}
@@ -495,6 +585,7 @@ export function ProductFiles({
                         productId={productId}
                         uploadId={item.id}
                         label={item.downloadName}
+                        status={item.status}
                       />
                     ) : null}
                   </div>
@@ -505,14 +596,19 @@ export function ProductFiles({
             <Field>
               <FieldLabel htmlFor="asset-file">Pilih file</FieldLabel>
               <Input
+                ref={assetInputRef}
                 id="asset-file"
                 type="file"
                 accept="application/pdf,application/zip,application/x-zip-compressed,.pdf,.zip"
-                disabled={controlsDisabled || asset.uploading}
+                disabled={assetControlsDisabled || assetBusy}
+                aria-describedby="asset-file-description"
                 onChange={(event) =>
                   selectFile("asset", event.target.files?.[0] ?? null)
                 }
               />
+              <FieldDescription id="asset-file-description">
+                File dipindai sebelum tersedia untuk pelanggan.
+              </FieldDescription>
             </Field>
 
             <Field>
@@ -522,7 +618,7 @@ export function ProductFiles({
                 value={downloadName}
                 maxLength={255}
                 placeholder="Contoh: template-laporan.zip"
-                disabled={controlsDisabled || asset.uploading}
+                disabled={assetControlsDisabled || assetBusy}
                 onChange={(event) => setDownloadName(event.target.value)}
               />
               <FieldDescription>
@@ -530,9 +626,13 @@ export function ProductFiles({
               </FieldDescription>
             </Field>
 
-            {asset.uploading ? (
+            {assetBusy ? (
               <Progress value={asset.progress}>
-                <ProgressLabel>Mengunggah file</ProgressLabel>
+                <ProgressLabel>
+                  {asset.phase === "verifying"
+                    ? "Memindai dan memverifikasi file"
+                    : "Mengunggah file"}
+                </ProgressLabel>
                 <ProgressValue>
                   {(_formattedValue, value) => `${value ?? 0}%`}
                 </ProgressValue>
@@ -550,15 +650,23 @@ export function ProductFiles({
             <Button
               type="button"
               disabled={
-                controlsDisabled ||
-                asset.uploading ||
+                assetControlsDisabled ||
+                assetBusy ||
                 !asset.file ||
                 !downloadName.trim()
               }
               onClick={() => upload("asset")}
             >
-              {asset.uploading ? <Spinner aria-hidden="true" /> : <Upload aria-hidden="true" />}
-              Unggah file
+              {assetBusy ? (
+                <Spinner aria-hidden="true" />
+              ) : (
+                <Upload data-icon="inline-start" aria-hidden="true" />
+              )}
+              {asset.phase === "verifying"
+                ? "Memverifikasi file"
+                : asset.uploadId
+                  ? "Coba verifikasi lagi"
+                  : "Unggah file"}
             </Button>
           </FieldGroup>
         </CardContent>
@@ -570,6 +678,17 @@ export function ProductFiles({
           <AlertTitle>Unggah file belum tersedia</AlertTitle>
           <AlertDescription>
             Lengkapi konfigurasi Cloudflare R2 untuk mengunggah sampul dan file produk.
+          </AlertDescription>
+        </Alert>
+      ) : null}
+
+      {storageConfigured && !assetScannerConfigured ? (
+        <Alert className="lg:col-span-2">
+          <CircleAlert aria-hidden="true" />
+          <AlertTitle>Unggah file produk belum tersedia</AlertTitle>
+          <AlertDescription>
+            Hubungkan pemindai malware ClamAV sebelum mengunggah file produk.
+            Gambar sampul tetap dapat diunggah.
           </AlertDescription>
         </Alert>
       ) : null}

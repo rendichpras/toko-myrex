@@ -147,7 +147,7 @@ export function ProductForm({
       ) : null}
 
       {state.success && !changedSinceSubmit && !pending ? (
-        <Alert>
+        <Alert role="status">
           <CircleCheck aria-hidden="true" />
           <AlertTitle>Perubahan disimpan</AlertTitle>
           <AlertDescription>{state.success}</AlertDescription>
@@ -157,7 +157,9 @@ export function ProductForm({
       <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
         <Card>
           <CardHeader>
-            <CardTitle>Informasi produk</CardTitle>
+            <CardTitle role="heading" aria-level={2}>
+              Informasi produk
+            </CardTitle>
             <CardDescription>
               Informasi yang akan dilihat pelanggan di katalog.
             </CardDescription>
@@ -299,7 +301,9 @@ export function ProductForm({
         <div className="grid gap-6 lg:sticky lg:top-6">
           <Card>
             <CardHeader>
-              <CardTitle>Harga dan SKU</CardTitle>
+              <CardTitle role="heading" aria-level={2}>
+                Harga dan SKU
+              </CardTitle>
               <CardDescription>
                 Tetapkan harga dan kode internal produk.
               </CardDescription>

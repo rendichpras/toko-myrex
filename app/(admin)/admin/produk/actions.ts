@@ -36,7 +36,7 @@ import {
 
 export type ProductUploadActionResult<T = undefined> =
   | { success: true; data: T }
-  | { success: false; message: string }
+  | { success: false; message: string; retryable?: boolean }
 
 function readProductForm(formData: FormData) {
   return createProductInputSchema.safeParse({
@@ -239,7 +239,11 @@ export async function createProductUploadIntent(
     }
   } catch (error) {
     if (error instanceof CatalogUploadError) {
-      return { success: false, message: error.message }
+      return {
+        success: false,
+        message: error.message,
+        retryable: error.retryable,
+      }
     }
 
     console.error("Upload produk gagal disiapkan.", error)
@@ -268,7 +272,11 @@ export async function completeProductUpload(
     return { success: true, data }
   } catch (error) {
     if (error instanceof CatalogUploadError) {
-      return { success: false, message: error.message }
+      return {
+        success: false,
+        message: error.message,
+        retryable: error.retryable,
+      }
     }
 
     console.error("Upload produk gagal diverifikasi.", error)
@@ -300,7 +308,11 @@ export async function removeProductUpload(
     return { success: true, data }
   } catch (error) {
     if (error instanceof CatalogUploadError) {
-      return { success: false, message: error.message }
+      return {
+        success: false,
+        message: error.message,
+        retryable: error.retryable,
+      }
     }
 
     console.error("File produk gagal dihapus.", error)

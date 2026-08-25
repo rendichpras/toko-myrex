@@ -1,22 +1,10 @@
 import "server-only"
 
-import { z } from "zod"
-
-const storageEnvironmentSchema = z.object({
-  R2_ACCOUNT_ID: z.string().trim().min(1),
-  R2_ACCESS_KEY_ID: z.string().trim().min(1),
-  R2_SECRET_ACCESS_KEY: z.string().trim().min(1),
-  R2_MEDIA_BUCKET: z.string().trim().min(1),
-  R2_PRIVATE_BUCKET: z.string().trim().min(1),
-  R2_MEDIA_PUBLIC_URL: z.url(),
-  R2_UPLOAD_EXPIRES_SECONDS: z.coerce.number().int().min(60).max(900),
-  PRODUCT_ASSET_MAX_BYTES: z.coerce
-    .number()
-    .int()
-    .min(1)
-    .max(5 * 1024 * 1024 * 1024),
-  PRODUCT_ASSET_ALLOWED_MIME_TYPES: z.string().trim().min(1),
-})
+import {
+  parsePublicMediaUrl,
+  parseScannerEnvironment,
+  parseStorageEnvironment,
+} from "@/lib/storage/environment"
 
 export type StorageConfig = {
   accountId: string
@@ -30,10 +18,16 @@ export type StorageConfig = {
   productAssetAllowedMimeTypes: ReadonlySet<string>
 }
 
+export type AssetScannerConfig = {
+  host: string
+  port: number
+  timeoutMs: number
+}
+
 let cachedConfig: StorageConfig | undefined
 
 function readStorageEnvironment() {
-  return storageEnvironmentSchema.safeParse({
+  return parseStorageEnvironment({
     R2_ACCOUNT_ID: process.env.R2_ACCOUNT_ID,
     R2_ACCESS_KEY_ID: process.env.R2_ACCESS_KEY_ID,
     R2_SECRET_ACCESS_KEY: process.env.R2_SECRET_ACCESS_KEY,
@@ -50,8 +44,34 @@ function readStorageEnvironment() {
   })
 }
 
+function readScannerEnvironment() {
+  return parseScannerEnvironment({
+    CLAMAV_HOST: process.env.CLAMAV_HOST,
+    CLAMAV_PORT: process.env.CLAMAV_PORT ?? "3310",
+    CLAMAV_TIMEOUT_MS: process.env.CLAMAV_TIMEOUT_MS ?? "120000",
+  })
+}
+
 export function isStorageConfigured() {
   return readStorageEnvironment().success
+}
+
+export function isAssetScannerConfigured() {
+  return readScannerEnvironment().success
+}
+
+export function getAssetScannerConfig(): AssetScannerConfig {
+  const parsed = readScannerEnvironment()
+
+  if (!parsed.success) {
+    throw new Error("Pemindai malware belum dikonfigurasi.")
+  }
+
+  return {
+    host: parsed.data.CLAMAV_HOST,
+    port: parsed.data.CLAMAV_PORT,
+    timeoutMs: parsed.data.CLAMAV_TIMEOUT_MS,
+  }
 }
 
 export function getProductAssetMaxBytes() {
@@ -99,13 +119,13 @@ export function getStorageConfig(): StorageConfig {
 }
 
 export function getPublicMediaUrl(storageKey: string) {
-  const parsed = readStorageEnvironment()
+  const parsed = parsePublicMediaUrl(process.env.R2_MEDIA_PUBLIC_URL)
 
   if (!parsed.success) {
     return null
   }
 
-  const baseUrl = parsed.data.R2_MEDIA_PUBLIC_URL.replace(/\/$/, "")
+  const baseUrl = parsed.data.replace(/\/$/, "")
   const encodedKey = storageKey.split("/").map(encodeURIComponent).join("/")
 
   return `${baseUrl}/${encodedKey}`

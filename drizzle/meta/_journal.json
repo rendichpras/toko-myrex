@@ -36,6 +36,13 @@
       "when": 1787629048886,
       "tag": "0004_worthless_marvel_apes",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1787658036181,
+      "tag": "0005_fearless_tag",
+      "breakpoints": true
     }
   ]
 }

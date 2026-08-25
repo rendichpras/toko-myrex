@@ -70,7 +70,7 @@ export function ProductLifecycleActions({
       <Card size="sm">
         <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
-            <p className="font-medium">Status produk</p>
+            <h2 className="font-medium">Status produk</h2>
             <p className="text-muted-foreground">
               {lifecycleDescriptions[status]}
             </p>

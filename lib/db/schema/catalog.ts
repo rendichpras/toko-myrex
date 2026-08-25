@@ -134,6 +134,7 @@ export const productMedia = pgTable(
     width: integer("width"),
     height: integer("height"),
     altText: varchar("alt_text", { length: 500 }),
+    rejectionReason: varchar("rejection_reason", { length: 500 }),
     position: integer("position").default(0).notNull(),
     status: productFileStatusEnum("status").default("pending").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
@@ -182,6 +183,7 @@ export const productAsset = pgTable(
     mimeType: varchar("mime_type", { length: 255 }).notNull(),
     fileSize: bigint("file_size", { mode: "number" }).notNull(),
     checksumSha256: char("checksum_sha256", { length: 64 }),
+    rejectionReason: varchar("rejection_reason", { length: 500 }),
     version: integer("version").default(1).notNull(),
     status: productFileStatusEnum("status").default("pending").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
@@ -195,7 +197,7 @@ export const productAsset = pgTable(
   (table) => [
     uniqueIndex("product_asset_storage_key_uidx").on(table.storageKey),
     index("product_asset_product_id_idx").on(table.productId),
-    index("product_asset_product_version_idx").on(
+    uniqueIndex("product_asset_product_version_uidx").on(
       table.productId,
       table.version
     ),

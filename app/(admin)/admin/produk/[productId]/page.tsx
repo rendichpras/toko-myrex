@@ -21,6 +21,7 @@ import { getAdminProduct } from "@/lib/catalog/data"
 import { productIdSchema } from "@/lib/catalog/validation"
 import {
   getProductAssetMaxBytes,
+  isAssetScannerConfigured,
   isStorageConfigured,
 } from "@/lib/storage"
 
@@ -117,9 +118,27 @@ export default async function EditProductPage({
 
       <ProductFiles
         assetMaxBytes={getProductAssetMaxBytes()}
-        assets={product.assets}
+        assetScannerConfigured={isAssetScannerConfigured()}
+        assets={product.assets.map((asset) => ({
+          id: asset.id,
+          downloadName: asset.downloadName,
+          fileSize: asset.fileSize,
+          version: asset.version,
+          rejectionReason: asset.rejectionReason,
+          status: asset.status,
+        }))}
         disabled={isArchived}
-        media={product.media}
+        media={product.media.map((media) => ({
+          id: media.id,
+          role: media.role,
+          publicUrl: media.publicUrl,
+          fileSize: media.fileSize,
+          width: media.width,
+          height: media.height,
+          altText: media.altText,
+          rejectionReason: media.rejectionReason,
+          status: media.status,
+        }))}
         productId={product.id}
         productName={product.name}
         storageConfigured={isStorageConfigured()}

@@ -5,6 +5,7 @@ import {
   DeleteObjectCommand,
   GetObjectCommand,
   HeadObjectCommand,
+  ListObjectsV2Command,
   PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3"
@@ -93,10 +94,25 @@ export function deleteObject(bucket: StorageBucket, key: string) {
   )
 }
 
+export function listObjects(
+  bucket: StorageBucket,
+  prefix: string,
+  continuationToken?: string
+) {
+  return getClient().send(
+    new ListObjectsV2Command({
+      Bucket: getBucketName(bucket),
+      Prefix: prefix,
+      ContinuationToken: continuationToken,
+    })
+  )
+}
+
 export function copyPrivateObject(
   sourceKey: string,
   targetBucket: StorageBucket,
-  targetKey: string
+  targetKey: string,
+  sourceETag: string
 ) {
   const config = getStorageConfig()
   const source = `${config.privateBucket}/${sourceKey}`
@@ -109,6 +125,7 @@ export function copyPrivateObject(
       Bucket: getBucketName(targetBucket),
       Key: targetKey,
       CopySource: source,
+      CopySourceIfMatch: sourceETag,
     })
   )
 }

@@ -34,8 +34,14 @@ function getMediaRemotePatterns() {
 
   try {
     const url = new URL(value)
+
+    if (url.protocol !== "https:") {
+      return []
+    }
+
     url.pathname = `${url.pathname.replace(/\/$/, "")}/**`
     url.search = ""
+    url.hash = ""
     return [url]
   } catch {
     return []
