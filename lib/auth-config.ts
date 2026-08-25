@@ -2,6 +2,7 @@ import { betterAuth } from "better-auth"
 import { drizzleAdapter } from "better-auth/adapters/drizzle"
 import { nextCookies } from "better-auth/next-js"
 import { admin, haveIBeenPwned, twoFactor } from "better-auth/plugins"
+import type { NodePgDatabase } from "drizzle-orm/node-postgres"
 import {
   APIError,
   createAuthMiddleware,
@@ -9,8 +10,9 @@ import {
 } from "better-auth/api"
 
 import { compromisedPasswordMessage } from "@/lib/auth-error"
-import { db } from "@/lib/db"
 import * as schema from "@/lib/db/schema/index"
+
+type AuthDatabase = NodePgDatabase<typeof schema>
 
 function getAuthSecret() {
   const secret = process.env.BETTER_AUTH_SECRET
@@ -66,12 +68,12 @@ function emailActionHtml({
   return `<p>${description}</p><p><a href="${safeUrl}">${label}</a></p><p>${notice}</p>`
 }
 
-export const auth = betterAuth({
+export const createAuth = (database: AuthDatabase) => betterAuth({
   appName: "Toko Myrex",
   secret: getAuthSecret(),
   baseURL: process.env.BETTER_AUTH_URL ?? "http://localhost:3000",
   trustedOrigins: getTrustedOrigins(),
-  database: drizzleAdapter(db, {
+  database: drizzleAdapter(database, {
     provider: "pg",
     schema,
   }),

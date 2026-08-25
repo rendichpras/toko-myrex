@@ -1,3 +1,6 @@
 import "server-only"
 
-export { auth } from "@/lib/auth-config"
+import { createAuth } from "@/lib/auth-config"
+import { db } from "@/lib/db"
+
+export const auth = createAuth(db)
