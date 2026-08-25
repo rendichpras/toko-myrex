@@ -46,22 +46,12 @@ const storageEnvironmentSchema = z
     }
   })
 
-const scannerEnvironmentSchema = z.object({
-  CLAMAV_HOST: z.string().trim().min(1),
-  CLAMAV_PORT: z.coerce.number().int().min(1).max(65_535),
-  CLAMAV_TIMEOUT_MS: z.coerce.number().int().min(1_000).max(300_000),
-})
-
 const publicMediaUrlSchema = z
   .url()
   .refine((value) => new URL(value).protocol === "https:")
 
 export function parseStorageEnvironment(input: unknown) {
   return storageEnvironmentSchema.safeParse(input)
-}
-
-export function parseScannerEnvironment(input: unknown) {
-  return scannerEnvironmentSchema.safeParse(input)
 }
 
 export function parsePublicMediaUrl(input: unknown) {

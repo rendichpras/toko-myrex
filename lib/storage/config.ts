@@ -2,7 +2,6 @@ import "server-only"
 
 import {
   parsePublicMediaUrl,
-  parseScannerEnvironment,
   parseStorageEnvironment,
 } from "@/lib/storage/environment"
 
@@ -16,12 +15,6 @@ export type StorageConfig = {
   uploadExpiresSeconds: number
   productAssetMaxBytes: number
   productAssetAllowedMimeTypes: ReadonlySet<string>
-}
-
-export type AssetScannerConfig = {
-  host: string
-  port: number
-  timeoutMs: number
 }
 
 let cachedConfig: StorageConfig | undefined
@@ -44,34 +37,8 @@ function readStorageEnvironment() {
   })
 }
 
-function readScannerEnvironment() {
-  return parseScannerEnvironment({
-    CLAMAV_HOST: process.env.CLAMAV_HOST,
-    CLAMAV_PORT: process.env.CLAMAV_PORT ?? "3310",
-    CLAMAV_TIMEOUT_MS: process.env.CLAMAV_TIMEOUT_MS ?? "120000",
-  })
-}
-
 export function isStorageConfigured() {
   return readStorageEnvironment().success
-}
-
-export function isAssetScannerConfigured() {
-  return readScannerEnvironment().success
-}
-
-export function getAssetScannerConfig(): AssetScannerConfig {
-  const parsed = readScannerEnvironment()
-
-  if (!parsed.success) {
-    throw new Error("Pemindai malware belum dikonfigurasi.")
-  }
-
-  return {
-    host: parsed.data.CLAMAV_HOST,
-    port: parsed.data.CLAMAV_PORT,
-    timeoutMs: parsed.data.CLAMAV_TIMEOUT_MS,
-  }
 }
 
 export function getProductAssetMaxBytes() {

@@ -21,7 +21,6 @@ import { getAdminProduct } from "@/lib/catalog/data"
 import { productIdSchema } from "@/lib/catalog/validation"
 import {
   getProductAssetMaxBytes,
-  isAssetScannerConfigured,
   isStorageConfigured,
 } from "@/lib/storage"
 
@@ -118,7 +117,6 @@ export default async function EditProductPage({
 
       <ProductFiles
         assetMaxBytes={getProductAssetMaxBytes()}
-        assetScannerConfigured={isAssetScannerConfigured()}
         assets={product.assets.map((asset) => ({
           id: asset.id,
           downloadName: asset.downloadName,

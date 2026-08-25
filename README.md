@@ -70,19 +70,6 @@ ini melalui scheduler deployment minimal sekali sehari.
 Gunakan `bun run catalog:cleanup-uploads --dry-run` untuk memeriksa kandidat
 tanpa mengubah database atau object storage.
 
-### Pemindaian file produk
-
-File PDF dan ZIP harus dipindai oleh `clamd` sebelum berstatus siap. Hubungkan
-aplikasi ke ClamAV melalui `CLAMAV_HOST`, `CLAMAV_PORT`, dan
-`CLAMAV_TIMEOUT_MS`. Aplikasi menggunakan perintah `INSTREAM`, sehingga
-`StreamMaxLength` pada `clamd.conf` harus lebih besar atau sama dengan
-`PRODUCT_ASSET_MAX_BYTES`.
-
-Jalankan `clamd` dalam jaringan privat. Jangan mengekspos port TCP ClamAV ke
-internet karena protokolnya tidak menyediakan autentikasi atau enkripsi.
-Lihat [dokumentasi resmi protokol ClamD](https://docs.clamav.net/manual/Usage/ClamdProtocol.html)
-untuk konfigurasi socket dan batas stream.
-
 ## Struktur kode
 
 - `app/` berisi route, layout, metadata, dan endpoint HTTP.

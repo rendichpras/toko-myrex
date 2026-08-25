@@ -1,9 +1,6 @@
 import { describe, expect, test } from "bun:test"
 
-import {
-  parseScannerEnvironment,
-  parseStorageEnvironment,
-} from "@/lib/storage/environment"
+import { parseStorageEnvironment } from "@/lib/storage/environment"
 
 const validEnvironment = {
   R2_ACCOUNT_ID: "account",
@@ -48,15 +45,5 @@ describe("konfigurasi storage", () => {
     })
 
     expect(result.success).toBe(false)
-  })
-
-  test("memvalidasi konfigurasi ClamAV", () => {
-    expect(
-      parseScannerEnvironment({
-        CLAMAV_HOST: "127.0.0.1",
-        CLAMAV_PORT: "3310",
-        CLAMAV_TIMEOUT_MS: "120000",
-      }).success
-    ).toBe(true)
   })
 })

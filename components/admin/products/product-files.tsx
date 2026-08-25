@@ -213,7 +213,6 @@ function RemoveFileButton({
 
 export function ProductFiles({
   assetMaxBytes,
-  assetScannerConfigured,
   assets,
   disabled,
   media,
@@ -222,7 +221,6 @@ export function ProductFiles({
   storageConfigured,
 }: {
   assetMaxBytes: number
-  assetScannerConfigured: boolean
   assets: ProductAssetClientDTO[]
   disabled: boolean
   media: ProductCoverClientDTO[]
@@ -249,7 +247,6 @@ export function ProductFiles({
   const controlsDisabled = disabled || !storageConfigured
   const coverBusy = cover.phase !== "idle"
   const assetBusy = asset.phase !== "idle"
-  const assetControlsDisabled = controlsDisabled || !assetScannerConfigured
   const altText = altTextOverride ?? productName
 
   function selectFile(kind: UploadKind, file: File | null) {
@@ -600,7 +597,7 @@ export function ProductFiles({
                 id="asset-file"
                 type="file"
                 accept="application/pdf,application/zip,application/x-zip-compressed,.pdf,.zip"
-                disabled={assetControlsDisabled || assetBusy}
+                disabled={controlsDisabled || assetBusy}
                 aria-describedby="asset-file-description"
                 onChange={(event) =>
                   selectFile("asset", event.target.files?.[0] ?? null)
@@ -618,7 +615,7 @@ export function ProductFiles({
                 value={downloadName}
                 maxLength={255}
                 placeholder="Contoh: template-laporan.zip"
-                disabled={assetControlsDisabled || assetBusy}
+                disabled={controlsDisabled || assetBusy}
                 onChange={(event) => setDownloadName(event.target.value)}
               />
               <FieldDescription>
@@ -650,7 +647,7 @@ export function ProductFiles({
             <Button
               type="button"
               disabled={
-                assetControlsDisabled ||
+                controlsDisabled ||
                 assetBusy ||
                 !asset.file ||
                 !downloadName.trim()
@@ -678,17 +675,6 @@ export function ProductFiles({
           <AlertTitle>Unggah file belum tersedia</AlertTitle>
           <AlertDescription>
             Lengkapi konfigurasi Cloudflare R2 untuk mengunggah sampul dan file produk.
-          </AlertDescription>
-        </Alert>
-      ) : null}
-
-      {storageConfigured && !assetScannerConfigured ? (
-        <Alert className="lg:col-span-2">
-          <CircleAlert aria-hidden="true" />
-          <AlertTitle>Unggah file produk belum tersedia</AlertTitle>
-          <AlertDescription>
-            Hubungkan pemindai malware ClamAV sebelum mengunggah file produk.
-            Gambar sampul tetap dapat diunggah.
           </AlertDescription>
         </Alert>
       ) : null}

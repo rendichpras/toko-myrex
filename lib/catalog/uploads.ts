@@ -19,9 +19,7 @@ import {
   deleteObject,
   getObject,
   headObject,
-  isAssetScannerConfigured,
   putObject,
-  scanChunksForMalware,
 } from "@/lib/storage"
 import {
   COVER_MAX_BYTES,
@@ -353,7 +351,7 @@ async function verifyCover(
   }
 }
 
-async function readAssetSignatureChecksumAndScan(storageKey: string) {
+async function readAssetSignatureAndChecksum(storageKey: string) {
   const object = await getObject("private", storageKey)
 
   if (!object.Body) {
@@ -365,20 +363,17 @@ async function readAssetSignatureChecksumAndScan(storageKey: string) {
   let signatureLength = 0
   let bytesRead = 0
 
-  const malwareScan = await scanChunksForMalware(
-    object.Body as AsyncIterable<Uint8Array>,
-    (chunk) => {
-      hash.update(chunk)
-      bytesRead += chunk.byteLength
+  for await (const chunk of object.Body as AsyncIterable<Uint8Array>) {
+    hash.update(chunk)
+    bytesRead += chunk.byteLength
 
-      if (signatureLength < 8192) {
-        const remaining = 8192 - signatureLength
-        const part = chunk.subarray(0, remaining)
-        signatureChunks.push(part)
-        signatureLength += part.byteLength
-      }
+    if (signatureLength < 8192) {
+      const remaining = 8192 - signatureLength
+      const part = chunk.subarray(0, remaining)
+      signatureChunks.push(part)
+      signatureLength += part.byteLength
     }
-  )
+  }
 
   const signature = new Uint8Array(signatureLength)
   let offset = 0
@@ -393,7 +388,6 @@ async function readAssetSignatureChecksumAndScan(storageKey: string) {
       detected: await fileTypeFromBuffer(signature),
       checksum: hash.digest("hex"),
       bytesRead,
-      malwareScan,
     }
   } catch {
     throw verificationError("Signature file tidak dapat dibaca.")
@@ -413,14 +407,6 @@ async function verifyAsset(
   let readyStorageKey: string | null = null
 
   try {
-    if (!isAssetScannerConfigured()) {
-      throw new CatalogUploadError(
-        "Pemindai malware belum tersedia. Hubungi pengelola sistem.",
-        "temporary_failure",
-        true
-      )
-    }
-
     const metadata = await verifyObjectMetadata({
       storageKey: upload.storageKey,
       expectedSize: upload.fileSize,
@@ -452,8 +438,8 @@ async function verifyAsset(
       throw error
     }
 
-    const { detected, checksum, bytesRead, malwareScan } =
-      await readAssetSignatureChecksumAndScan(readyKey)
+    const { detected, checksum, bytesRead } =
+      await readAssetSignatureAndChecksum(readyKey)
 
     if (bytesRead !== upload.fileSize) {
       throw verificationError("Ukuran file yang dibaca tidak sesuai.")
@@ -461,10 +447,6 @@ async function verifyAsset(
 
     if (!detected || !mimeTypesMatch(upload.mimeType, detected.mime)) {
       throw verificationError("Signature file tidak sesuai.")
-    }
-
-    if (malwareScan.status === "infected") {
-      throw verificationError("Pemindai malware menolak file.")
     }
 
     try {
@@ -522,7 +504,7 @@ async function verifyAsset(
       throw error
     }
 
-    console.error("Pemindaian atau pemindahan file produk gagal.", error)
+    console.error("Verifikasi atau pemindahan file produk gagal.", error)
     throw new CatalogUploadError(
       "File belum dapat diverifikasi. Coba lagi.",
       "temporary_failure",
@@ -540,13 +522,6 @@ export async function createCatalogUploadIntent(
 
   if (!validation.success) {
     throw new CatalogUploadError(validation.message)
-  }
-
-  if (values.kind === "asset" && !isAssetScannerConfigured()) {
-    throw new CatalogUploadError(
-      "Pemindai malware belum dikonfigurasi.",
-      "invalid_state"
-    )
   }
 
   const storageKey = createStorageKey({
