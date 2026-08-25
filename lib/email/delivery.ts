@@ -6,7 +6,7 @@ import { after } from "next/server"
 
 import { db } from "@/lib/db"
 import { emailDelivery } from "@/lib/db/schema/index"
-import { getResendClient } from "@/lib/resend"
+import { getResendClient } from "@/lib/email/resend"
 
 export type AuthEmailCategory = "email_verification" | "password_reset"
 
@@ -18,7 +18,7 @@ type AuthEmail = {
   html: string
 }
 
-function getErrorDetail(error: unknown) {
+function summarizeDeliveryError(error: unknown) {
   const message = error instanceof Error ? error.message : "Kesalahan tidak diketahui."
 
   return message.slice(0, 1_000)
@@ -43,7 +43,7 @@ export async function sendAuthEmail(email: AuthEmail) {
   let resendId: string
 
   try {
-    const { data, error } = await getResendClient().emails.send(
+    const { data: acceptedEmail, error } = await getResendClient().emails.send(
       {
         from,
         to,
@@ -60,13 +60,13 @@ export async function sendAuthEmail(email: AuthEmail) {
       throw new Error(`Resend menolak pengiriman: ${error.message}`)
     }
 
-    if (!data) {
+    if (!acceptedEmail) {
       throw new Error("Resend tidak mengembalikan ID pengiriman.")
     }
 
-    resendId = data.id
+    resendId = acceptedEmail.id
   } catch (error) {
-    const detail = getErrorDetail(error)
+    const detail = summarizeDeliveryError(error)
 
     try {
       await db

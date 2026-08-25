@@ -1,7 +1,7 @@
 import { toNextJsHandler } from "better-auth/next-js"
 
 import { auth } from "@/lib/auth"
-import { assertAuthEnvironment } from "@/lib/auth-env"
+import { assertAuthEnvironment } from "@/lib/auth/environment"
 
 const handlers = toNextJsHandler(auth)
 

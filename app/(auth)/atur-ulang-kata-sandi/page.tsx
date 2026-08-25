@@ -1,7 +1,6 @@
 import type { Metadata } from "next"
 
-import { AuthPage } from "@/components/auth/auth-page"
-import { ResetPasswordCard } from "@/components/auth/reset-password-card"
+import { NewPasswordCard } from "@/components/auth/new-password-card"
 
 export const metadata: Metadata = {
   title: "Atur ulang kata sandi | Toko Myrex",
@@ -18,9 +17,5 @@ export default async function ResetPasswordPage({
   const { token } = await searchParams
   const resetToken = Array.isArray(token) ? token[0] : token
 
-  return (
-    <AuthPage>
-      <ResetPasswordCard token={resetToken ?? ""} />
-    </AuthPage>
-  )
+  return <NewPasswordCard token={resetToken ?? ""} />
 }

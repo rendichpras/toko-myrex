@@ -11,7 +11,7 @@ const authEnvironmentSchema = z.object({
 })
 
 export function assertAuthEnvironment() {
-  const result = authEnvironmentSchema.safeParse({
+  const validation = authEnvironmentSchema.safeParse({
     BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
     BETTER_AUTH_URL: process.env.BETTER_AUTH_URL,
     DATABASE_URL: process.env.DATABASE_URL,
@@ -19,13 +19,15 @@ export function assertAuthEnvironment() {
     EMAIL_FROM: process.env.EMAIL_FROM,
   })
 
-  if (!result.success) {
-    const names = result.error.issues
+  if (!validation.success) {
+    const invalidVariables = validation.error.issues
       .map((issue) => issue.path[0])
       .filter((name): name is string => typeof name === "string")
 
     throw new Error(
-      `Konfigurasi auth belum lengkap atau tidak valid: ${[...new Set(names)].join(", ")}`
+      `Konfigurasi auth belum lengkap atau tidak valid: ${[
+        ...new Set(invalidVariables),
+      ].join(", ")}`
     )
   }
 }

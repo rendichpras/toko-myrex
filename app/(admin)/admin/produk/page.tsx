@@ -9,7 +9,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty"
-import { requireAdmin } from "@/lib/session"
+import { requireAdmin } from "@/lib/auth/session"
 
 export const metadata: Metadata = {
   title: "Produk",

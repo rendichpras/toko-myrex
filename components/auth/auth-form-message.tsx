@@ -13,14 +13,14 @@ export function AuthFormMessage({
   title,
   variant = "error",
 }: AuthFormMessageProps) {
-  const success = variant === "success"
-  const Icon = success ? CircleCheck : CircleAlert
+  const isSuccess = variant === "success"
+  const Icon = isSuccess ? CircleCheck : CircleAlert
 
   return (
     <Alert
-      role={success ? "status" : "alert"}
-      variant={success ? "default" : "destructive"}
-      aria-label={title ?? (success ? "Berhasil" : "Terjadi kesalahan")}
+      role={isSuccess ? "status" : "alert"}
+      variant={isSuccess ? "default" : "destructive"}
+      aria-label={title ?? (isSuccess ? "Berhasil" : "Terjadi kesalahan")}
     >
       <Icon aria-hidden="true" />
       <AlertDescription>{message}</AlertDescription>

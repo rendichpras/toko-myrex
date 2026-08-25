@@ -1,11 +1,10 @@
 import type { Metadata } from "next"
 import { redirect } from "next/navigation"
 
-import { AuthPage } from "@/components/auth/auth-page"
 import { AuthPanel } from "@/components/auth/auth-panel"
 import { TwoFactorSetupForm } from "@/components/auth/two-factor-setup-form"
-import { getSafeRedirectPath } from "@/lib/safe-redirect"
-import { requireAdminIdentity } from "@/lib/session"
+import { getSafeRedirectPath } from "@/lib/auth/safe-redirect"
+import { requireAdminIdentity } from "@/lib/auth/session"
 
 const setupPath = "/aktifkan-verifikasi-dua-langkah"
 
@@ -29,13 +28,11 @@ export default async function TwoFactorSetupPage({
   }
 
   return (
-    <AuthPage>
-      <AuthPanel
-        title="Aktifkan verifikasi dua langkah"
-        description="Hubungkan aplikasi autentikator untuk melindungi panel admin."
-      >
-        <TwoFactorSetupForm redirectTo={redirectTo} />
-      </AuthPanel>
-    </AuthPage>
+    <AuthPanel
+      title="Aktifkan verifikasi dua langkah"
+      description="Hubungkan aplikasi autentikator untuk melindungi panel admin."
+    >
+      <TwoFactorSetupForm redirectTo={redirectTo} />
+    </AuthPanel>
   )
 }

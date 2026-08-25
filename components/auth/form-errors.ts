@@ -1,4 +1,7 @@
-import type { AuthField, AuthFormState } from "@/lib/validations/auth"
+import type {
+  AuthField,
+  AuthFormState,
+} from "@/lib/auth/validation/credentials"
 
 type Errors = AuthFormState["errors"]
 

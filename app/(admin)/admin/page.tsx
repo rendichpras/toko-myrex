@@ -16,13 +16,13 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty"
-import { requireAdmin } from "@/lib/session"
+import { requireAdmin } from "@/lib/auth/session"
 
 export const metadata: Metadata = {
   title: "Ringkasan",
 }
 
-const sections = [
+const adminShortcuts = [
   {
     title: "Produk",
     description: "Kelola katalog, harga, dan akses produk digital.",
@@ -63,23 +63,23 @@ export default async function AdminDashboardPage() {
         </div>
 
         <div className="grid gap-4 md:grid-cols-3">
-          {sections.map((section) => (
+          {adminShortcuts.map((shortcut) => (
             <Link
-              key={section.title}
-              href={section.href}
+              key={shortcut.href}
+              href={shortcut.href}
               className="group grid outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
               <Card>
                 <CardHeader>
                   <div className="flex items-start gap-3">
                     <span className="flex size-10 shrink-0 items-center justify-center border bg-muted text-muted-foreground transition-colors group-hover:text-foreground">
-                      <section.icon className="size-4" aria-hidden="true" />
+                      <shortcut.icon className="size-4" aria-hidden="true" />
                     </span>
                     <div className="min-w-0 space-y-1">
                       <CardTitle>
-                        <h3 className="text-base">{section.title}</h3>
+                        <h3 className="text-base">{shortcut.title}</h3>
                       </CardTitle>
-                      <CardDescription>{section.description}</CardDescription>
+                      <CardDescription>{shortcut.description}</CardDescription>
                     </div>
                   </div>
                 </CardHeader>

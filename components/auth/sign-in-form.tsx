@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation"
 import { useState, type FormEvent } from "react"
 
 import { AuthFormMessage } from "@/components/auth/auth-form-message"
-import { AuthInput } from "@/components/auth/auth-input"
 import { AuthSubmitButton } from "@/components/auth/auth-submit-button"
 import {
   clearFieldError,
@@ -14,93 +13,102 @@ import {
 } from "@/components/auth/form-errors"
 import { PasswordInput } from "@/components/auth/password-input"
 import { Field, FieldError, FieldLabel } from "@/components/ui/field"
-import { authClient } from "@/lib/auth-client"
+import { Input } from "@/components/ui/input"
+import { authClient } from "@/lib/auth/client"
 import {
   authConnectionErrorMessage,
   getAuthErrorMessage,
-} from "@/lib/auth-error"
+} from "@/lib/auth/errors"
 import {
   signInSchema,
   type AuthFormState,
-} from "@/lib/validations/auth"
+} from "@/lib/auth/validation/credentials"
+import { hasUserRole } from "@/lib/auth/roles"
+import { resolvePostSignInPath } from "@/lib/auth/safe-redirect"
 
-export function SignInForm({ redirectTo = "/" }: { redirectTo?: string }) {
+export function SignInForm({ redirectTo }: { redirectTo?: string }) {
   const router = useRouter()
   const [errors, setErrors] = useState<AuthFormState["errors"]>({})
-  const [message, setMessage] = useState("")
-  const [pending, setPending] = useState(false)
+  const [formError, setFormError] = useState("")
+  const [isSigningIn, setIsSigningIn] = useState(false)
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function signIn(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    setMessage("")
+    setFormError("")
 
-    const result = signInSchema.safeParse(
+    const parsedCredentials = signInSchema.safeParse(
       Object.fromEntries(new FormData(event.currentTarget))
     )
 
-    if (!result.success) {
-      setErrors(result.error.flatten().fieldErrors)
+    if (!parsedCredentials.success) {
+      setErrors(parsedCredentials.error.flatten().fieldErrors)
       focusFirstInvalidField(event.currentTarget)
       return
     }
 
     setErrors({})
-    setPending(true)
+    setIsSigningIn(true)
 
     try {
-      const { data, error } = await authClient.signIn.email(result.data)
+      const { data: signInResult, error } = await authClient.signIn.email(
+        parsedCredentials.data
+      )
 
       if (error) {
-        setMessage(
+        setFormError(
           getAuthErrorMessage(error, "Tidak dapat masuk. Coba lagi.")
         )
         return
       }
 
       if (
-        data &&
-        "twoFactorRedirect" in data &&
-        data.twoFactorRedirect === true
+        signInResult &&
+        "twoFactorRedirect" in signInResult &&
+        signInResult.twoFactorRedirect === true
       ) {
+        const twoFactorDestination = redirectTo ?? "/admin"
+
         router.push(
-          `/verifikasi-dua-langkah?next=${encodeURIComponent(redirectTo)}`
+          `/verifikasi-dua-langkah?next=${encodeURIComponent(
+            twoFactorDestination
+          )}`
         )
         return
       }
 
-      const roles = data?.user.role?.split(",").map((role) => role.trim()) ?? []
+      const userIsAdmin = hasUserRole(signInResult?.user.role, "admin")
 
-      if (roles.includes("admin") && !data?.user.twoFactorEnabled) {
+      if (userIsAdmin && !signInResult?.user.twoFactorEnabled) {
         router.replace(
           `/aktifkan-verifikasi-dua-langkah?next=${encodeURIComponent(
-            redirectTo.startsWith("/admin") ? redirectTo : "/admin"
+            redirectTo?.startsWith("/admin") ? redirectTo : "/admin"
           )}`
         )
         router.refresh()
         return
       }
 
-      router.replace(redirectTo)
+      router.replace(resolvePostSignInPath(redirectTo, userIsAdmin))
       router.refresh()
     } catch {
-      setMessage(authConnectionErrorMessage)
+      setFormError(authConnectionErrorMessage)
     } finally {
-      setPending(false)
+      setIsSigningIn(false)
     }
   }
 
   return (
     <form
       noValidate
-      aria-busy={pending}
-      onSubmit={handleSubmit}
+      aria-busy={isSigningIn}
+      onSubmit={signIn}
       className="grid gap-5"
     >
       <Field data-invalid={hasFieldError(errors, "email")}>
         <FieldLabel htmlFor="sign-in-email">
           Email
         </FieldLabel>
-        <AuthInput
+        <Input
           id="sign-in-email"
           name="email"
           type="email"
@@ -114,7 +122,7 @@ export function SignInForm({ redirectTo = "/" }: { redirectTo?: string }) {
             hasFieldError(errors, "email") ? "sign-in-email-error" : undefined
           }
           onChange={() => {
-            setMessage("")
+            setFormError("")
             setErrors((current) => clearFieldError(current, "email"))
           }}
           required
@@ -146,7 +154,7 @@ export function SignInForm({ redirectTo = "/" }: { redirectTo?: string }) {
               : undefined
           }
           onChange={() => {
-            setMessage("")
+            setFormError("")
             setErrors((current) => clearFieldError(current, "password"))
           }}
           required
@@ -156,9 +164,9 @@ export function SignInForm({ redirectTo = "/" }: { redirectTo?: string }) {
         </FieldError>
       </Field>
 
-      {message ? <AuthFormMessage message={message} /> : null}
+      {formError ? <AuthFormMessage message={formError} /> : null}
 
-      <AuthSubmitButton pending={pending} pendingLabel="Masuk...">
+      <AuthSubmitButton pending={isSigningIn} pendingLabel="Masuk...">
         Masuk
       </AuthSubmitButton>
     </form>

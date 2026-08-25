@@ -9,8 +9,9 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "auth:generate": "auth generate --config lib/auth-cli.ts --output lib/db/schema/auth.ts --yes",
-    "auth:create-admin": "auth create-admin --config lib/auth-cli.ts",
+    "check": "bun run lint && bun run typecheck",
+    "auth:generate": "auth generate --config lib/auth/cli.ts --output lib/db/schema/auth.ts --yes",
+    "auth:create-admin": "auth create-admin --config lib/auth/cli.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio"

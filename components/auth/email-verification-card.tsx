@@ -7,20 +7,20 @@ import { AuthFormMessage } from "@/components/auth/auth-form-message"
 import { AuthPanel } from "@/components/auth/auth-panel"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
-import { authClient } from "@/lib/auth-client"
+import { authClient } from "@/lib/auth/client"
 import {
   authConnectionErrorMessage,
   getAuthErrorMessage,
-} from "@/lib/auth-error"
+} from "@/lib/auth/errors"
 
-export function VerifyEmailCard({ token }: { token: string }) {
-  const [message, setMessage] = useState("")
-  const [pending, setPending] = useState(false)
-  const [success, setSuccess] = useState(false)
+export function EmailVerificationCard({ token }: { token: string }) {
+  const [verificationError, setVerificationError] = useState("")
+  const [isVerifying, setIsVerifying] = useState(false)
+  const [emailVerified, setEmailVerified] = useState(false)
 
-  async function handleVerification() {
-    setMessage("")
-    setPending(true)
+  async function verifyEmail() {
+    setVerificationError("")
+    setIsVerifying(true)
 
     try {
       const { error } = await authClient.verifyEmail({
@@ -28,7 +28,7 @@ export function VerifyEmailCard({ token }: { token: string }) {
       })
 
       if (error) {
-        setMessage(
+        setVerificationError(
           getAuthErrorMessage(
             error,
             "Tidak dapat memverifikasi email. Buka tautan terbaru, lalu coba lagi."
@@ -37,11 +37,11 @@ export function VerifyEmailCard({ token }: { token: string }) {
         return
       }
 
-      setSuccess(true)
+      setEmailVerified(true)
     } catch {
-      setMessage(authConnectionErrorMessage)
+      setVerificationError(authConnectionErrorMessage)
     } finally {
-      setPending(false)
+      setIsVerifying(false)
     }
   }
 
@@ -63,7 +63,7 @@ export function VerifyEmailCard({ token }: { token: string }) {
     )
   }
 
-  if (success) {
+  if (emailVerified) {
     return (
       <AuthPanel
         title="Email terverifikasi"
@@ -94,15 +94,17 @@ export function VerifyEmailCard({ token }: { token: string }) {
         </Button>
       }
     >
-      <div className="grid gap-4" aria-busy={pending}>
-        {message ? <AuthFormMessage message={message} /> : null}
+      <div className="grid gap-4" aria-busy={isVerifying}>
+        {verificationError ? (
+          <AuthFormMessage message={verificationError} />
+        ) : null}
         <Button
           type="button"
           size="lg"
-          disabled={pending}
-          onClick={handleVerification}
+          disabled={isVerifying}
+          onClick={verifyEmail}
         >
-          {pending ? (
+          {isVerifying ? (
             <>
               <Spinner aria-hidden="true" />
               Memverifikasi...

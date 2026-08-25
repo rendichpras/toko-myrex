@@ -1,7 +1,8 @@
 import type { Metadata } from "next"
 
-import { AuthCard } from "@/components/auth/auth-card"
-import { AuthPage } from "@/components/auth/auth-page"
+import { AuthNavigation } from "@/components/auth/auth-navigation"
+import { AuthPanel } from "@/components/auth/auth-panel"
+import { SignUpForm } from "@/components/auth/sign-up-form"
 
 export const metadata: Metadata = {
   title: "Buat akun | Toko Myrex",
@@ -10,8 +11,12 @@ export const metadata: Metadata = {
 
 export default function SignUpPage() {
   return (
-    <AuthPage>
-      <AuthCard mode="sign-up" />
-    </AuthPage>
+    <AuthPanel
+      title="Buat akun Toko Myrex"
+      description="Lengkapi nama, email, dan kata sandi untuk membuat akun."
+      navigation={<AuthNavigation activePage="sign-up" />}
+    >
+      <SignUpForm />
+    </AuthPanel>
   )
 }

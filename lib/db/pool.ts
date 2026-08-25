@@ -6,7 +6,7 @@ type DatabasePoolOptions = {
 
 const maximumTimerDurationMs = 2_147_483_647
 
-function getPositiveInteger(
+function readPositiveIntegerSetting(
   name: string,
   fallback: number,
   maximum = Number.MAX_SAFE_INTEGER
@@ -39,13 +39,13 @@ export function createDatabasePool({
 
   const pool = new Pool({
     connectionString,
-    max: getPositiveInteger("DATABASE_POOL_MAX", 10),
-    idleTimeoutMillis: getPositiveInteger(
+    max: readPositiveIntegerSetting("DATABASE_POOL_MAX", 10),
+    idleTimeoutMillis: readPositiveIntegerSetting(
       "DATABASE_POOL_IDLE_TIMEOUT_MS",
       10_000,
       maximumTimerDurationMs
     ),
-    connectionTimeoutMillis: getPositiveInteger(
+    connectionTimeoutMillis: readPositiveIntegerSetting(
       "DATABASE_POOL_CONNECTION_TIMEOUT_MS",
       5_000,
       maximumTimerDurationMs

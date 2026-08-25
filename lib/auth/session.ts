@@ -5,6 +5,7 @@ import { headers } from "next/headers"
 import { redirect } from "next/navigation"
 
 import { auth } from "@/lib/auth"
+import { hasUserRole } from "@/lib/auth/roles"
 
 export const getSession = cache(async () => {
   return auth.api.getSession({
@@ -41,9 +42,7 @@ export async function requireAdminIdentity(redirectTo = "/admin") {
     redirect(`/masuk?next=${encodeURIComponent(redirectTo)}`)
   }
 
-  const roles = session.user.role?.split(",").map((role) => role.trim()) ?? []
-
-  if (!roles.includes("admin")) {
+  if (!hasUserRole(session.user.role, "admin")) {
     redirect("/")
   }
 

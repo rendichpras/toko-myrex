@@ -4,7 +4,6 @@ import Link from "next/link"
 import { useState, type FormEvent } from "react"
 
 import { AuthFormMessage } from "@/components/auth/auth-form-message"
-import { AuthInput } from "@/components/auth/auth-input"
 import { AuthPanel } from "@/components/auth/auth-panel"
 import { AuthSubmitButton } from "@/components/auth/auth-submit-button"
 import {
@@ -14,38 +13,39 @@ import {
 } from "@/components/auth/form-errors"
 import { Button } from "@/components/ui/button"
 import { Field, FieldError, FieldLabel } from "@/components/ui/field"
-import { authClient } from "@/lib/auth-client"
+import { Input } from "@/components/ui/input"
+import { authClient } from "@/lib/auth/client"
 import {
   authConnectionErrorMessage,
   getAuthErrorMessage,
-} from "@/lib/auth-error"
+} from "@/lib/auth/errors"
 import {
   forgotPasswordSchema,
   type AuthFormState,
-} from "@/lib/validations/auth"
+} from "@/lib/auth/validation/credentials"
 
-export function ForgotPasswordCard() {
+export function PasswordResetRequestCard() {
   const [errors, setErrors] = useState<AuthFormState["errors"]>({})
-  const [message, setMessage] = useState("")
-  const [pending, setPending] = useState(false)
-  const [success, setSuccess] = useState(false)
+  const [formError, setFormError] = useState("")
+  const [isSendingResetLink, setIsSendingResetLink] = useState(false)
+  const [resetLinkSent, setResetLinkSent] = useState(false)
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function requestPasswordReset(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    setMessage("")
+    setFormError("")
 
-    const result = forgotPasswordSchema.safeParse(
+    const parsedRequest = forgotPasswordSchema.safeParse(
       Object.fromEntries(new FormData(event.currentTarget))
     )
 
-    if (!result.success) {
-      setErrors(result.error.flatten().fieldErrors)
+    if (!parsedRequest.success) {
+      setErrors(parsedRequest.error.flatten().fieldErrors)
       focusFirstInvalidField(event.currentTarget)
       return
     }
 
     setErrors({})
-    setPending(true)
+    setIsSendingResetLink(true)
 
     try {
       const redirectTo = new URL(
@@ -53,12 +53,12 @@ export function ForgotPasswordCard() {
         window.location.origin
       ).toString()
       const { error } = await authClient.requestPasswordReset({
-        email: result.data.email,
+        email: parsedRequest.data.email,
         redirectTo,
       })
 
       if (error) {
-        setMessage(
+        setFormError(
           getAuthErrorMessage(
             error,
             "Tidak dapat mengirim tautan. Coba lagi."
@@ -67,19 +67,19 @@ export function ForgotPasswordCard() {
         return
       }
 
-      setSuccess(true)
+      setResetLinkSent(true)
     } catch {
-      setMessage(authConnectionErrorMessage)
+      setFormError(authConnectionErrorMessage)
     } finally {
-      setPending(false)
+      setIsSendingResetLink(false)
     }
   }
 
   return (
     <AuthPanel
-      title={success ? "Periksa email" : "Atur ulang kata sandi"}
+      title={resetLinkSent ? "Periksa email" : "Atur ulang kata sandi"}
       description={
-        success
+        resetLinkSent
           ? "Buka tautan dalam email untuk membuat kata sandi baru."
           : "Masukkan email untuk menerima tautan pengaturan ulang kata sandi."
       }
@@ -93,7 +93,7 @@ export function ForgotPasswordCard() {
         </Button>
       }
     >
-      {success ? (
+      {resetLinkSent ? (
         <AuthFormMessage
           variant="success"
           message="Jika email terhubung ke akun, tautan telah dikirim. Periksa kotak masuk dan folder spam."
@@ -101,15 +101,15 @@ export function ForgotPasswordCard() {
       ) : (
         <form
           noValidate
-          aria-busy={pending}
-          onSubmit={handleSubmit}
+          aria-busy={isSendingResetLink}
+          onSubmit={requestPasswordReset}
           className="grid gap-5"
         >
           <Field data-invalid={hasFieldError(errors, "email")}>
             <FieldLabel htmlFor="forgot-password-email">
               Email
             </FieldLabel>
-            <AuthInput
+            <Input
               id="forgot-password-email"
               name="email"
               type="email"
@@ -125,7 +125,7 @@ export function ForgotPasswordCard() {
                   : undefined
               }
               onChange={() => {
-                setMessage("")
+                setFormError("")
                 setErrors((current) => clearFieldError(current, "email"))
               }}
               required
@@ -135,9 +135,12 @@ export function ForgotPasswordCard() {
             </FieldError>
           </Field>
 
-          {message ? <AuthFormMessage message={message} /> : null}
+          {formError ? <AuthFormMessage message={formError} /> : null}
 
-          <AuthSubmitButton pending={pending} pendingLabel="Mengirim tautan...">
+          <AuthSubmitButton
+            pending={isSendingResetLink}
+            pendingLabel="Mengirim tautan..."
+          >
             Kirim tautan pengaturan ulang
           </AuthSubmitButton>
         </form>

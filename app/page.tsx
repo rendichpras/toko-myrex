@@ -1,8 +1,8 @@
-import Link from "next/link";
+import Link from "next/link"
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/button"
 
-export default function Home() {
+export default function StorefrontPage() {
   return (
     <main className="flex flex-1 items-center justify-center px-6 py-16">
       <div className="grid max-w-xl gap-8 text-center">
@@ -34,5 +34,5 @@ export default function Home() {
         </div>
       </div>
     </main>
-  );
+  )
 }

@@ -2,15 +2,15 @@ export function getSafeRedirectPath(
   value: string | string[] | undefined,
   fallback = "/"
 ) {
-  const path = Array.isArray(value) ? value[0] : value
+  const requestedPath = Array.isArray(value) ? value[0] : value
 
-  if (!path?.startsWith("/") || path.startsWith("//")) {
+  if (!requestedPath?.startsWith("/") || requestedPath.startsWith("//")) {
     return fallback
   }
 
   try {
     const baseUrl = new URL("https://toko-myrex.local")
-    const targetUrl = new URL(path, baseUrl)
+    const targetUrl = new URL(requestedPath, baseUrl)
 
     if (targetUrl.origin !== baseUrl.origin) {
       return fallback
@@ -20,4 +20,11 @@ export function getSafeRedirectPath(
   } catch {
     return fallback
   }
+}
+
+export function resolvePostSignInPath(
+  requestedPath: string | undefined,
+  userIsAdmin: boolean
+) {
+  return requestedPath || (userIsAdmin ? "/admin" : "/")
 }

@@ -1,4 +1,4 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from "next"
 
 const securityHeaders = [
   {
@@ -23,7 +23,7 @@ const securityHeaders = [
     key: "X-Frame-Options",
     value: "DENY",
   },
-];
+]
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
@@ -33,8 +33,8 @@ const nextConfig: NextConfig = {
         source: "/(.*)",
         headers: securityHeaders,
       },
-    ];
+    ]
   },
-};
+}
 
-export default nextConfig;
+export default nextConfig

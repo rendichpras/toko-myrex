@@ -6,25 +6,25 @@ import QRCode from "react-qr-code"
 import { useState, type FormEvent } from "react"
 
 import { AuthFormMessage } from "@/components/auth/auth-form-message"
-import { AuthInput } from "@/components/auth/auth-input"
 import { AuthSubmitButton } from "@/components/auth/auth-submit-button"
 import { focusFirstInvalidField } from "@/components/auth/form-errors"
 import { PasswordInput } from "@/components/auth/password-input"
 import { Button } from "@/components/ui/button"
 import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field"
-import { authClient } from "@/lib/auth-client"
+import { Input } from "@/components/ui/input"
+import { authClient } from "@/lib/auth/client"
 import {
   authConnectionErrorMessage,
   getAuthErrorMessage,
-} from "@/lib/auth-error"
-import { totpCodeSchema } from "@/lib/validations/two-factor"
+} from "@/lib/auth/errors"
+import { totpCodeSchema } from "@/lib/auth/validation/two-factor"
 
-type Enrollment = {
+type TotpEnrollment = {
   backupCodes: string[]
   totpURI: string
 }
 
-function getSetupKey(totpURI: string) {
+function extractTotpSecret(totpURI: string) {
   try {
     return new URL(totpURI).searchParams.get("secret") ?? ""
   } catch {
@@ -34,17 +34,17 @@ function getSetupKey(totpURI: string) {
 
 export function TwoFactorSetupForm({ redirectTo }: { redirectTo: string }) {
   const router = useRouter()
-  const [enrollment, setEnrollment] = useState<Enrollment | null>(null)
-  const [verified, setVerified] = useState(false)
+  const [enrollment, setEnrollment] = useState<TotpEnrollment | null>(null)
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false)
   const [code, setCode] = useState("")
   const [fieldError, setFieldError] = useState("")
-  const [message, setMessage] = useState("")
-  const [pending, setPending] = useState(false)
-  const [copyMessage, setCopyMessage] = useState("")
+  const [formError, setFormError] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [clipboardStatus, setClipboardStatus] = useState("")
 
-  async function startEnrollment(event: FormEvent<HTMLFormElement>) {
+  async function startTwoFactorSetup(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    setMessage("")
+    setFormError("")
 
     const password = new FormData(event.currentTarget).get("password")
 
@@ -55,10 +55,10 @@ export function TwoFactorSetupForm({ redirectTo }: { redirectTo: string }) {
     }
 
     setFieldError("")
-    setPending(true)
+    setIsSubmitting(true)
 
     try {
-      const { data, error } = await authClient.twoFactor.enable({
+      const { data: enrollmentData, error } = await authClient.twoFactor.enable({
         password,
         method: "totp",
       })
@@ -68,7 +68,7 @@ export function TwoFactorSetupForm({ redirectTo }: { redirectTo: string }) {
           setFieldError("Kata sandi tidak cocok.")
           focusFirstInvalidField(event.currentTarget)
         } else {
-          setMessage(
+          setFormError(
             getAuthErrorMessage(
               error,
               "Tidak dapat menyiapkan verifikasi dua langkah. Coba lagi."
@@ -78,40 +78,40 @@ export function TwoFactorSetupForm({ redirectTo }: { redirectTo: string }) {
         return
       }
 
-      if (!data || data.method !== "totp") {
-        setMessage("Tidak dapat menyiapkan aplikasi autentikator. Coba lagi.")
+      if (!enrollmentData || enrollmentData.method !== "totp") {
+        setFormError("Tidak dapat menyiapkan aplikasi autentikator. Coba lagi.")
         return
       }
 
       setEnrollment({
-        backupCodes: data.backupCodes,
-        totpURI: data.totpURI,
+        backupCodes: enrollmentData.backupCodes,
+        totpURI: enrollmentData.totpURI,
       })
     } catch {
-      setMessage(authConnectionErrorMessage)
+      setFormError(authConnectionErrorMessage)
     } finally {
-      setPending(false)
+      setIsSubmitting(false)
     }
   }
 
-  async function verifyEnrollment(event: FormEvent<HTMLFormElement>) {
+  async function confirmTwoFactorSetup(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    setMessage("")
+    setFormError("")
 
-    const result = totpCodeSchema.safeParse(code)
+    const parsedCode = totpCodeSchema.safeParse(code)
 
-    if (!result.success) {
-      setFieldError(result.error.issues[0]?.message ?? "Kode tidak cocok.")
+    if (!parsedCode.success) {
+      setFieldError(parsedCode.error.issues[0]?.message ?? "Kode tidak cocok.")
       focusFirstInvalidField(event.currentTarget)
       return
     }
 
     setFieldError("")
-    setPending(true)
+    setIsSubmitting(true)
 
     try {
       const { error } = await authClient.twoFactor.verifyTotp({
-        code: result.data,
+        code: parsedCode.data,
         trustDevice: false,
       })
 
@@ -125,25 +125,27 @@ export function TwoFactorSetupForm({ redirectTo }: { redirectTo: string }) {
           setFieldError(errorMessage)
           focusFirstInvalidField(event.currentTarget)
         } else {
-          setMessage(errorMessage)
+          setFormError(errorMessage)
         }
         return
       }
 
-      setVerified(true)
+      setTwoFactorEnabled(true)
     } catch {
-      setMessage(authConnectionErrorMessage)
+      setFormError(authConnectionErrorMessage)
     } finally {
-      setPending(false)
+      setIsSubmitting(false)
     }
   }
 
-  async function copyText(value: string, successMessage: string) {
+  async function copyToClipboard(value: string, successMessage: string) {
     try {
       await navigator.clipboard.writeText(value)
-      setCopyMessage(successMessage)
+      setClipboardStatus(successMessage)
     } catch {
-      setCopyMessage("Tidak dapat menyalin. Pilih dan salin teks secara manual.")
+      setClipboardStatus(
+        "Tidak dapat menyalin. Pilih dan salin teks secara manual."
+      )
     }
   }
 
@@ -151,8 +153,8 @@ export function TwoFactorSetupForm({ redirectTo }: { redirectTo: string }) {
     return (
       <form
         noValidate
-        aria-busy={pending}
-        onSubmit={startEnrollment}
+        aria-busy={isSubmitting}
+        onSubmit={startTwoFactorSetup}
         className="grid gap-5"
       >
         <Field data-invalid={Boolean(fieldError)}>
@@ -170,7 +172,7 @@ export function TwoFactorSetupForm({ redirectTo }: { redirectTo: string }) {
             }
             onChange={() => {
               setFieldError("")
-              setMessage("")
+              setFormError("")
             }}
             required
           />
@@ -180,23 +182,23 @@ export function TwoFactorSetupForm({ redirectTo }: { redirectTo: string }) {
           <FieldError id="two-factor-password-error">{fieldError}</FieldError>
         </Field>
 
-        {message ? <AuthFormMessage message={message} /> : null}
+        {formError ? <AuthFormMessage message={formError} /> : null}
 
-        <AuthSubmitButton pending={pending} pendingLabel="Menyiapkan...">
+        <AuthSubmitButton pending={isSubmitting} pendingLabel="Menyiapkan...">
           Siapkan aplikasi autentikator
         </AuthSubmitButton>
       </form>
     )
   }
 
-  if (!verified) {
-    const setupKey = getSetupKey(enrollment.totpURI)
+  if (!twoFactorEnabled) {
+    const setupKey = extractTotpSecret(enrollment.totpURI)
 
     return (
       <form
         noValidate
-        aria-busy={pending}
-        onSubmit={verifyEnrollment}
+        aria-busy={isSubmitting}
+        onSubmit={confirmTwoFactorSetup}
         className="grid gap-5"
       >
         <div className="grid gap-3 text-center">
@@ -228,7 +230,9 @@ export function TwoFactorSetupForm({ redirectTo }: { redirectTo: string }) {
             <Button
               type="button"
               variant="outline"
-              onClick={() => copyText(setupKey, "Kunci penyiapan disalin.")}
+              onClick={() =>
+                copyToClipboard(setupKey, "Kunci penyiapan disalin.")
+              }
             >
               <Copy data-icon="inline-start" aria-hidden="true" />
               Salin kunci penyiapan
@@ -240,7 +244,7 @@ export function TwoFactorSetupForm({ redirectTo }: { redirectTo: string }) {
           <FieldLabel htmlFor="two-factor-enrollment-code">
             Kode verifikasi
           </FieldLabel>
-          <AuthInput
+          <Input
             id="two-factor-enrollment-code"
             name="code"
             type="text"
@@ -258,7 +262,7 @@ export function TwoFactorSetupForm({ redirectTo }: { redirectTo: string }) {
             onChange={(event) => {
               setCode(event.target.value.replace(/\D/g, "").slice(0, 6))
               setFieldError("")
-              setMessage("")
+              setFormError("")
             }}
             required
           />
@@ -270,14 +274,14 @@ export function TwoFactorSetupForm({ redirectTo }: { redirectTo: string }) {
           </FieldError>
         </Field>
 
-        {copyMessage ? (
+        {clipboardStatus ? (
           <p role="status" className="text-xs text-muted-foreground">
-            {copyMessage}
+            {clipboardStatus}
           </p>
         ) : null}
-        {message ? <AuthFormMessage message={message} /> : null}
+        {formError ? <AuthFormMessage message={formError} /> : null}
 
-        <AuthSubmitButton pending={pending} pendingLabel="Memverifikasi...">
+        <AuthSubmitButton pending={isSubmitting} pendingLabel="Memverifikasi...">
           Aktifkan verifikasi dua langkah
         </AuthSubmitButton>
       </form>
@@ -313,7 +317,7 @@ export function TwoFactorSetupForm({ redirectTo }: { redirectTo: string }) {
           type="button"
           variant="outline"
           onClick={() =>
-            copyText(
+            copyToClipboard(
               enrollment.backupCodes.join("\n"),
               "Kode cadangan disalin."
             )
@@ -322,9 +326,9 @@ export function TwoFactorSetupForm({ redirectTo }: { redirectTo: string }) {
           <Copy data-icon="inline-start" aria-hidden="true" />
           Salin semua kode
         </Button>
-        {copyMessage ? (
+        {clipboardStatus ? (
           <p role="status" className="text-xs text-muted-foreground">
-            {copyMessage}
+            {clipboardStatus}
           </p>
         ) : null}
       </div>

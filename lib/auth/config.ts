@@ -9,12 +9,13 @@ import {
   getAuthoritativeSessionFromCtx,
 } from "better-auth/api"
 
-import { compromisedPasswordMessage } from "@/lib/auth-error"
+import { compromisedPasswordMessage } from "@/lib/auth/errors"
 import * as schema from "@/lib/db/schema/index"
+import { hasUserRole } from "@/lib/auth/roles"
 
 type AuthDatabase = NodePgDatabase<typeof schema>
 
-function getAuthSecret() {
+function readAuthSecret() {
   const secret = process.env.BETTER_AUTH_SECRET
 
   if (!secret || secret.length < 32) {
@@ -26,7 +27,7 @@ function getAuthSecret() {
   return secret
 }
 
-function getOrigin(request?: Request) {
+function resolveAuthOrigin(request?: Request) {
   if (process.env.BETTER_AUTH_URL) {
     return process.env.BETTER_AUTH_URL
   }
@@ -34,7 +35,7 @@ function getOrigin(request?: Request) {
   return request ? new URL(request.url).origin : "http://localhost:3000"
 }
 
-function getTrustedOrigins() {
+function listTrustedAuthOrigins() {
   const origins = new Set<string>()
 
   if (process.env.BETTER_AUTH_URL) {
@@ -48,7 +49,7 @@ function getTrustedOrigins() {
   return [...origins]
 }
 
-function emailActionHtml({
+function buildAuthEmailHtml({
   description,
   label,
   notice,
@@ -70,9 +71,9 @@ function emailActionHtml({
 
 export const createAuth = (database: AuthDatabase) => betterAuth({
   appName: "Toko Myrex",
-  secret: getAuthSecret(),
+  secret: readAuthSecret(),
   baseURL: process.env.BETTER_AUTH_URL ?? "http://localhost:3000",
-  trustedOrigins: getTrustedOrigins(),
+  trustedOrigins: listTrustedAuthOrigins(),
   database: drizzleAdapter(database, {
     provider: "pg",
     schema,
@@ -116,14 +117,14 @@ export const createAuth = (database: AuthDatabase) => betterAuth({
     }),
     revokeSessionsOnPasswordReset: true,
     sendResetPassword: async ({ user, url }) => {
-      const { queueAuthEmail } = await import("@/lib/email")
+      const { queueAuthEmail } = await import("@/lib/email/delivery")
 
       queueAuthEmail({
         category: "password_reset",
         to: user.email,
         subject: "Atur ulang kata sandi Toko Myrex",
         text: `Atur ulang kata sandi Toko Myrex melalui tautan ini: ${url}\n\nAbaikan email ini jika Anda tidak meminta pengaturan ulang kata sandi.`,
-        html: emailActionHtml({
+        html: buildAuthEmailHtml({
           description: "Atur ulang kata sandi akun Toko Myrex.",
           label: "Atur ulang kata sandi",
           notice:
@@ -137,9 +138,9 @@ export const createAuth = (database: AuthDatabase) => betterAuth({
     sendOnSignUp: true,
     sendOnSignIn: true,
     sendVerificationEmail: async ({ user, token }, request) => {
-      const { queueAuthEmail } = await import("@/lib/email")
+      const { queueAuthEmail } = await import("@/lib/email/delivery")
 
-      const url = new URL("/verifikasi-email", getOrigin(request))
+      const url = new URL("/verifikasi-email", resolveAuthOrigin(request))
       url.searchParams.set("token", token)
 
       queueAuthEmail({
@@ -147,7 +148,7 @@ export const createAuth = (database: AuthDatabase) => betterAuth({
         to: user.email,
         subject: "Verifikasi email Toko Myrex",
         text: `Verifikasi email akun Toko Myrex melalui tautan ini: ${url}\n\nAbaikan email ini jika Anda tidak membuat akun atau mencoba masuk ke Toko Myrex.`,
-        html: emailActionHtml({
+        html: buildAuthEmailHtml({
           description: "Verifikasi email akun Toko Myrex.",
           label: "Verifikasi email",
           notice:
@@ -181,12 +182,10 @@ export const createAuth = (database: AuthDatabase) => betterAuth({
         return
       }
 
-      const roles =
-        typeof session.user.role === "string"
-          ? session.user.role.split(",").map((role) => role.trim())
-          : []
-
-      if (roles.includes("admin") && !session.user.twoFactorEnabled) {
+      if (
+        hasUserRole(session.user.role, "admin") &&
+        !session.user.twoFactorEnabled
+      ) {
         throw new APIError("FORBIDDEN", {
           code: "TWO_FACTOR_REQUIRED",
           message:

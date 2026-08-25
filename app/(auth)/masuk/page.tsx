@@ -1,8 +1,9 @@
 import type { Metadata } from "next"
 
-import { AuthCard } from "@/components/auth/auth-card"
-import { AuthPage } from "@/components/auth/auth-page"
-import { getSafeRedirectPath } from "@/lib/safe-redirect"
+import { AuthNavigation } from "@/components/auth/auth-navigation"
+import { AuthPanel } from "@/components/auth/auth-panel"
+import { SignInForm } from "@/components/auth/sign-in-form"
+import { getSafeRedirectPath } from "@/lib/auth/safe-redirect"
 
 export const metadata: Metadata = {
   title: "Masuk | Toko Myrex",
@@ -12,11 +13,15 @@ export const metadata: Metadata = {
 export default async function SignInPage({
   searchParams,
 }: PageProps<"/masuk">) {
-  const redirectTo = getSafeRedirectPath((await searchParams).next)
+  const requestedPath = getSafeRedirectPath((await searchParams).next, "")
 
   return (
-    <AuthPage>
-      <AuthCard mode="sign-in" redirectTo={redirectTo} />
-    </AuthPage>
+    <AuthPanel
+      title="Masuk ke Toko Myrex"
+      description="Masukkan email dan kata sandi untuk melanjutkan."
+      navigation={<AuthNavigation activePage="sign-in" />}
+    >
+      <SignInForm redirectTo={requestedPath || undefined} />
+    </AuthPanel>
   )
 }

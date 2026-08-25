@@ -1,7 +1,6 @@
 import type { Metadata } from "next"
 
-import { AuthPage } from "@/components/auth/auth-page"
-import { ForgotPasswordCard } from "@/components/auth/forgot-password-card"
+import { PasswordResetRequestCard } from "@/components/auth/password-reset-request-card"
 
 export const metadata: Metadata = {
   title: "Atur ulang kata sandi | Toko Myrex",
@@ -9,9 +8,5 @@ export const metadata: Metadata = {
 }
 
 export default function ForgotPasswordPage() {
-  return (
-    <AuthPage>
-      <ForgotPasswordCard />
-    </AuthPage>
-  )
+  return <PasswordResetRequestCard />
 }

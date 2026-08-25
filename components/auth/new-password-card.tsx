@@ -15,16 +15,16 @@ import {
 import { PasswordInput } from "@/components/auth/password-input"
 import { Button } from "@/components/ui/button"
 import { Field, FieldError, FieldLabel } from "@/components/ui/field"
-import { authClient } from "@/lib/auth-client"
+import { authClient } from "@/lib/auth/client"
 import {
   authConnectionErrorMessage,
   getAuthErrorMessage,
-} from "@/lib/auth-error"
+} from "@/lib/auth/errors"
 import { cn } from "@/lib/utils"
 import {
   resetPasswordSchema,
   type AuthFormState,
-} from "@/lib/validations/auth"
+} from "@/lib/auth/validation/credentials"
 
 function PasswordRule({ valid, children }: { valid: boolean; children: string }) {
   const Icon = valid ? Check : Circle
@@ -45,11 +45,11 @@ function PasswordRule({ valid, children }: { valid: boolean; children: string })
   )
 }
 
-export function ResetPasswordCard({ token }: { token: string }) {
+export function NewPasswordCard({ token }: { token: string }) {
   const [errors, setErrors] = useState<AuthFormState["errors"]>({})
-  const [message, setMessage] = useState("")
-  const [pending, setPending] = useState(false)
-  const [success, setSuccess] = useState(false)
+  const [formError, setFormError] = useState("")
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false)
+  const [passwordUpdated, setPasswordUpdated] = useState(false)
   const [password, setPassword] = useState("")
   const [passwordConfirmation, setPasswordConfirmation] = useState("")
 
@@ -57,33 +57,33 @@ export function ResetPasswordCard({ token }: { token: string }) {
   const matches =
     passwordConfirmation.length > 0 && password === passwordConfirmation
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function updatePassword(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    setMessage("")
+    setFormError("")
 
-    const result = resetPasswordSchema.safeParse({
+    const parsedPassword = resetPasswordSchema.safeParse({
       token,
       password,
       passwordConfirmation,
     })
 
-    if (!result.success) {
-      setErrors(result.error.flatten().fieldErrors)
+    if (!parsedPassword.success) {
+      setErrors(parsedPassword.error.flatten().fieldErrors)
       focusFirstInvalidField(event.currentTarget)
       return
     }
 
     setErrors({})
-    setPending(true)
+    setIsUpdatingPassword(true)
 
     try {
       const { error } = await authClient.resetPassword({
-        newPassword: result.data.password,
-        token: result.data.token,
+        newPassword: parsedPassword.data.password,
+        token: parsedPassword.data.token,
       })
 
       if (error) {
-        setMessage(
+        setFormError(
           getAuthErrorMessage(
             error,
             "Tidak dapat memperbarui kata sandi. Minta tautan baru, lalu coba lagi."
@@ -92,11 +92,11 @@ export function ResetPasswordCard({ token }: { token: string }) {
         return
       }
 
-      setSuccess(true)
+      setPasswordUpdated(true)
     } catch {
-      setMessage(authConnectionErrorMessage)
+      setFormError(authConnectionErrorMessage)
     } finally {
-      setPending(false)
+      setIsUpdatingPassword(false)
     }
   }
 
@@ -117,7 +117,7 @@ export function ResetPasswordCard({ token }: { token: string }) {
     )
   }
 
-  if (success) {
+  if (passwordUpdated) {
     return (
       <AuthPanel
         title="Kata sandi diperbarui"
@@ -150,8 +150,8 @@ export function ResetPasswordCard({ token }: { token: string }) {
     >
       <form
         noValidate
-        aria-busy={pending}
-        onSubmit={handleSubmit}
+        aria-busy={isUpdatingPassword}
+        onSubmit={updatePassword}
         className="grid gap-5"
       >
         <Field data-invalid={hasFieldError(errors, "password")}>
@@ -167,7 +167,7 @@ export function ResetPasswordCard({ token }: { token: string }) {
             maxLength={128}
             value={password}
             onChange={(event) => {
-              setMessage("")
+              setFormError("")
               setPassword(event.target.value)
               setErrors((current) =>
                 clearFieldError(
@@ -198,7 +198,7 @@ export function ResetPasswordCard({ token }: { token: string }) {
             maxLength={128}
             value={passwordConfirmation}
             onChange={(event) => {
-              setMessage("")
+              setFormError("")
               setPasswordConfirmation(event.target.value)
               setErrors((current) =>
                 clearFieldError(current, "passwordConfirmation")
@@ -222,9 +222,12 @@ export function ResetPasswordCard({ token }: { token: string }) {
           </PasswordRule>
         </ul>
 
-        {message ? <AuthFormMessage message={message} /> : null}
+        {formError ? <AuthFormMessage message={formError} /> : null}
 
-        <AuthSubmitButton pending={pending} pendingLabel="Memperbarui...">
+        <AuthSubmitButton
+          pending={isUpdatingPassword}
+          pendingLabel="Memperbarui..."
+        >
           Perbarui kata sandi
         </AuthSubmitButton>
       </form>

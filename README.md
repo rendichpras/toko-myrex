@@ -1,36 +1,67 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Toko Myrex
 
-## Getting Started
+Toko produk digital dengan area pelanggan dan panel administrasi. Aplikasi ini
+menggunakan Next.js App Router, Better Auth, PostgreSQL, Drizzle ORM, dan Resend.
 
-First, run the development server:
+## Menjalankan aplikasi
+
+Prasyarat:
+
+- Bun 1.4 atau versi kompatibel
+- PostgreSQL yang dapat diakses dari mesin lokal
+- akun Resend untuk alur email dan webhook
+
+Salin `.env.example` menjadi `.env.local`, lalu isi seluruh nilai yang diperlukan.
+Setelah itu jalankan:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+bun install
+bun run db:migrate
+bun run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Aplikasi tersedia di `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Struktur kode
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `app/` berisi route, layout, metadata, dan endpoint HTTP.
+- `components/auth/` berisi antarmuka serta interaksi autentikasi.
+- `components/admin/` berisi kerangka navigasi panel admin.
+- `components/ui/` berisi UI primitive dari shadcn; pertahankan API komponennya
+  agar pembaruan melalui CLI tetap aman.
+- `lib/db/` menangani koneksi, schema, dan konfigurasi PostgreSQL.
+- `lib/auth/` menangani konfigurasi Better Auth, sesi, otorisasi, dan validasi.
+- `lib/email/` menangani pengiriman email serta pencatatan webhook Resend.
+- `drizzle/` berisi migration dan snapshot yang dihasilkan Drizzle Kit.
 
-## Learn More
+Halaman autentikasi berbagi layout melalui route group `app/(auth)`. Otorisasi
+admin tetap diperiksa di server melalui `requireAdmin`; pemeriksaan cookie di
+`proxy.ts` hanya digunakan sebagai pengalihan awal, bukan sebagai batas keamanan.
 
-To learn more about Next.js, take a look at the following resources:
+## Pemeriksaan sebelum commit
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+bun run lint
+bun run typecheck
+bun run build
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Untuk menjalankan lint dan type-check sekaligus, gunakan `bun run check`.
 
-## Deploy on Vercel
+Tidak ada test runner di repository saat ini. Ketika fitur domain pertama mulai
+memiliki aturan bisnis, tambahkan pengujian pada batas tersebut alih-alih menguji
+detail implementasi komponen.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Perintah operasional
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+bun run auth:generate       # perbarui schema Better Auth
+bun run auth:create-admin   # buat akun admin
+bun run db:generate         # buat migration dari perubahan schema
+bun run db:migrate          # terapkan migration
+bun run db:studio           # buka Drizzle Studio
+```
+
+Jangan mengubah `lib/db/schema/auth.ts`, file migration, atau snapshot secara
+manual. Gunakan generator masing-masing agar schema dan riwayat migration tetap
+selaras.

@@ -4,7 +4,6 @@ import Link from "next/link"
 import { useState, type FormEvent } from "react"
 
 import { AuthFormMessage } from "@/components/auth/auth-form-message"
-import { AuthInput } from "@/components/auth/auth-input"
 import { AuthSubmitButton } from "@/components/auth/auth-submit-button"
 import {
   clearFieldError,
@@ -19,41 +18,42 @@ import {
   FieldError,
   FieldLabel,
 } from "@/components/ui/field"
-import { authClient } from "@/lib/auth-client"
+import { Input } from "@/components/ui/input"
+import { authClient } from "@/lib/auth/client"
 import {
   authConnectionErrorMessage,
   getAuthErrorMessage,
-} from "@/lib/auth-error"
+} from "@/lib/auth/errors"
 import {
   signUpSchema,
   type AuthFormState,
-} from "@/lib/validations/auth"
+} from "@/lib/auth/validation/credentials"
 
 export function SignUpForm() {
   const [errors, setErrors] = useState<AuthFormState["errors"]>({})
-  const [message, setMessage] = useState("")
-  const [pending, setPending] = useState(false)
-  const [success, setSuccess] = useState(false)
+  const [formError, setFormError] = useState("")
+  const [isCreatingAccount, setIsCreatingAccount] = useState(false)
+  const [verificationEmailSent, setVerificationEmailSent] = useState(false)
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function createAccount(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    setMessage("")
+    setFormError("")
 
-    const result = signUpSchema.safeParse(
+    const parsedAccount = signUpSchema.safeParse(
       Object.fromEntries(new FormData(event.currentTarget))
     )
 
-    if (!result.success) {
-      setErrors(result.error.flatten().fieldErrors)
+    if (!parsedAccount.success) {
+      setErrors(parsedAccount.error.flatten().fieldErrors)
       focusFirstInvalidField(event.currentTarget)
       return
     }
 
     setErrors({})
-    setPending(true)
+    setIsCreatingAccount(true)
 
     try {
-      const { name, email, password } = result.data
+      const { name, email, password } = parsedAccount.data
       const { error } = await authClient.signUp.email({
         name,
         email,
@@ -62,7 +62,7 @@ export function SignUpForm() {
       })
 
       if (error) {
-        setMessage(
+        setFormError(
           getAuthErrorMessage(
             error,
             "Tidak dapat membuat akun. Coba lagi."
@@ -71,15 +71,15 @@ export function SignUpForm() {
         return
       }
 
-      setSuccess(true)
+      setVerificationEmailSent(true)
     } catch {
-      setMessage(authConnectionErrorMessage)
+      setFormError(authConnectionErrorMessage)
     } finally {
-      setPending(false)
+      setIsCreatingAccount(false)
     }
   }
 
-  if (success) {
+  if (verificationEmailSent) {
     return (
       <div className="grid gap-4">
         <AuthFormMessage
@@ -101,15 +101,15 @@ export function SignUpForm() {
   return (
     <form
       noValidate
-      aria-busy={pending}
-      onSubmit={handleSubmit}
+      aria-busy={isCreatingAccount}
+      onSubmit={createAccount}
       className="grid gap-5"
     >
       <Field data-invalid={hasFieldError(errors, "name")}>
         <FieldLabel htmlFor="sign-up-name">
           Nama lengkap
         </FieldLabel>
-        <AuthInput
+        <Input
           id="sign-up-name"
           name="name"
           type="text"
@@ -122,7 +122,7 @@ export function SignUpForm() {
             hasFieldError(errors, "name") ? "sign-up-name-error" : undefined
           }
           onChange={() => {
-            setMessage("")
+            setFormError("")
             setErrors((current) => clearFieldError(current, "name"))
           }}
           required
@@ -134,7 +134,7 @@ export function SignUpForm() {
         <FieldLabel htmlFor="sign-up-email">
           Email
         </FieldLabel>
-        <AuthInput
+        <Input
           id="sign-up-email"
           name="email"
           type="email"
@@ -148,7 +148,7 @@ export function SignUpForm() {
             hasFieldError(errors, "email") ? "sign-up-email-error" : undefined
           }
           onChange={() => {
-            setMessage("")
+            setFormError("")
             setErrors((current) => clearFieldError(current, "email"))
           }}
           required
@@ -170,7 +170,7 @@ export function SignUpForm() {
           aria-invalid={hasFieldError(errors, "password")}
           aria-describedby="sign-up-password-description sign-up-password-error"
           onChange={() => {
-            setMessage("")
+            setFormError("")
             setErrors((current) =>
               clearFieldError(
                 clearFieldError(current, "password"),
@@ -206,7 +206,7 @@ export function SignUpForm() {
               : undefined
           }
           onChange={() => {
-            setMessage("")
+            setFormError("")
             setErrors((current) =>
               clearFieldError(current, "passwordConfirmation")
             )
@@ -218,9 +218,12 @@ export function SignUpForm() {
         </FieldError>
       </Field>
 
-      {message ? <AuthFormMessage message={message} /> : null}
+      {formError ? <AuthFormMessage message={formError} /> : null}
 
-      <AuthSubmitButton pending={pending} pendingLabel="Membuat akun...">
+      <AuthSubmitButton
+        pending={isCreatingAccount}
+        pendingLabel="Membuat akun..."
+      >
         Buat akun
       </AuthSubmitButton>
     </form>

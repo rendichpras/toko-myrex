@@ -15,8 +15,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { SidebarMenuButton } from "@/components/ui/sidebar"
-import { authClient } from "@/lib/auth-client"
-import { authConnectionErrorMessage } from "@/lib/auth-error"
+import { authClient } from "@/lib/auth/client"
+import { authConnectionErrorMessage } from "@/lib/auth/errors"
 
 type AdminUserMenuProps = {
   user: {
@@ -25,7 +25,7 @@ type AdminUserMenuProps = {
   }
 }
 
-function getInitials(name: string) {
+function getUserInitials(name: string) {
   return (
     name
       .trim()
@@ -39,13 +39,13 @@ function getInitials(name: string) {
 export function AdminUserMenu({ user }: AdminUserMenuProps) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
-  const [pending, setPending] = useState(false)
+  const [isSigningOut, setIsSigningOut] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
-  async function handleSignOut() {
-    if (pending) return
+  async function signOut() {
+    if (isSigningOut) return
 
-    setPending(true)
+    setIsSigningOut(true)
     setErrorMessage(null)
 
     try {
@@ -53,7 +53,7 @@ export function AdminUserMenu({ user }: AdminUserMenuProps) {
 
       if (error) {
         setErrorMessage("Tidak dapat keluar. Coba lagi.")
-        setPending(false)
+        setIsSigningOut(false)
         return
       }
 
@@ -61,7 +61,7 @@ export function AdminUserMenu({ user }: AdminUserMenuProps) {
       router.refresh()
     } catch {
       setErrorMessage(authConnectionErrorMessage)
-      setPending(false)
+      setIsSigningOut(false)
     }
   }
 
@@ -70,7 +70,7 @@ export function AdminUserMenu({ user }: AdminUserMenuProps) {
       open={open}
       onOpenChange={(nextOpen) => {
         setOpen(nextOpen)
-        if (!nextOpen && !pending) setErrorMessage(null)
+        if (!nextOpen && !isSigningOut) setErrorMessage(null)
       }}
     >
       <DropdownMenuTrigger
@@ -80,7 +80,7 @@ export function AdminUserMenu({ user }: AdminUserMenuProps) {
             aria-label={`Buka menu akun ${user.name}`}
           >
             <Avatar>
-              <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+              <AvatarFallback>{getUserInitials(user.name)}</AvatarFallback>
             </Avatar>
             <span className="flex min-w-0 flex-col group-data-[collapsible=icon]:hidden">
               <span className="truncate text-sm font-medium">{user.name}</span>
@@ -103,11 +103,11 @@ export function AdminUserMenu({ user }: AdminUserMenuProps) {
           <DropdownMenuSeparator />
           <DropdownMenuItem
             closeOnClick={false}
-            disabled={pending}
-            onClick={handleSignOut}
+            disabled={isSigningOut}
+            onClick={signOut}
           >
             <LogOut aria-hidden="true" />
-            {pending ? "Keluar..." : "Keluar"}
+            {isSigningOut ? "Keluar..." : "Keluar"}
           </DropdownMenuItem>
         </DropdownMenuGroup>
         {errorMessage ? (

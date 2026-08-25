@@ -4,10 +4,13 @@ import {
   isEmailDeliveryProblem,
   isTrackedEmailEvent,
   recordResendEmailEvent,
-} from "@/lib/email-webhook"
-import { getResendClient, getResendWebhookSecret } from "@/lib/resend"
+} from "@/lib/email/webhook"
+import {
+  getResendClient,
+  getResendWebhookSecret,
+} from "@/lib/email/resend"
 
-function invalidWebhookResponse() {
+function rejectInvalidWebhook() {
   return new Response("Webhook tidak valid.", { status: 400 })
 }
 
@@ -17,7 +20,7 @@ export async function POST(request: Request) {
   const signature = request.headers.get("svix-signature")
 
   if (!eventId || !timestamp || !signature) {
-    return invalidWebhookResponse()
+    return rejectInvalidWebhook()
   }
 
   let webhookSecret: string
@@ -45,7 +48,7 @@ export async function POST(request: Request) {
       webhookSecret,
     })
   } catch {
-    return invalidWebhookResponse()
+    return rejectInvalidWebhook()
   }
 
   if (!isTrackedEmailEvent(event)) {
@@ -53,9 +56,9 @@ export async function POST(request: Request) {
   }
 
   try {
-    const recorded = await recordResendEmailEvent(eventId, event)
+    const wasRecorded = await recordResendEmailEvent(eventId, event)
 
-    if (recorded && isEmailDeliveryProblem(event)) {
+    if (wasRecorded && isEmailDeliveryProblem(event)) {
       console.error("Resend melaporkan masalah pengiriman email.", {
         eventId,
         emailId: event.data.email_id,

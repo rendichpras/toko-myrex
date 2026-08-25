@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/sidebar"
 import { TooltipProvider } from "@/components/ui/tooltip"
 
-const navigation = [
+const adminNavigationItems = [
   { href: "/admin", label: "Ringkasan", icon: LayoutDashboard },
   { href: "/admin/produk", label: "Produk", icon: Package },
   { href: "/admin/pesanan", label: "Pesanan", icon: ReceiptText },
@@ -60,15 +60,15 @@ function AdminNavigation({ pathname }: { pathname: string }) {
   return (
     <nav aria-label="Menu admin">
       <SidebarMenu>
-        {navigation.map((item) => {
-          const active = isRouteActive(pathname, item.href)
+        {adminNavigationItems.map((destination) => {
+          const active = isRouteActive(pathname, destination.href)
 
           return (
-            <SidebarMenuItem key={item.href}>
+            <SidebarMenuItem key={destination.href}>
               <SidebarMenuButton
                 render={
                   <Link
-                    href={item.href}
+                    href={destination.href}
                     aria-current={active ? "page" : undefined}
                     onClick={() => {
                       if (isMobile) setOpenMobile(false)
@@ -76,10 +76,10 @@ function AdminNavigation({ pathname }: { pathname: string }) {
                   />
                 }
                 isActive={active}
-                tooltip={item.label}
+                tooltip={destination.label}
               >
-                <item.icon aria-hidden="true" />
-                <span>{item.label}</span>
+                <destination.icon aria-hidden="true" />
+                <span>{destination.label}</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           )
@@ -92,10 +92,11 @@ function AdminNavigation({ pathname }: { pathname: string }) {
 export function AdminShell({ children, user }: AdminShellProps) {
   const pathname = usePathname()
 
-  const currentItem =
-    [...navigation]
+  const currentSection =
+    [...adminNavigationItems]
       .reverse()
-      .find((item) => isRouteActive(pathname, item.href)) ?? navigation[0]
+      .find((destination) => isRouteActive(pathname, destination.href)) ??
+    adminNavigationItems[0]
 
   return (
     <TooltipProvider>
@@ -156,7 +157,7 @@ export function AdminShell({ children, user }: AdminShellProps) {
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
-                  <BreadcrumbPage>{currentItem.label}</BreadcrumbPage>
+                  <BreadcrumbPage>{currentSection.label}</BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
