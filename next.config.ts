@@ -25,8 +25,31 @@ const securityHeaders = [
   },
 ]
 
+function getMediaRemotePatterns() {
+  const value = process.env.R2_MEDIA_PUBLIC_URL
+
+  if (!value) {
+    return []
+  }
+
+  try {
+    const url = new URL(value)
+    url.pathname = `${url.pathname.replace(/\/$/, "")}/**`
+    url.search = ""
+    return [url]
+  } catch {
+    return []
+  }
+}
+
+const mediaRemotePatterns = getMediaRemotePatterns()
+
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  images:
+    mediaRemotePatterns.length > 0
+      ? { remotePatterns: mediaRemotePatterns }
+      : undefined,
   async headers() {
     return [
       {

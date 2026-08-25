@@ -1,4 +1,5 @@
 import Link from "next/link"
+import Image from "next/image"
 import {
   ChevronLeft,
   ChevronRight,
@@ -110,7 +111,15 @@ export function ProductTable({
                   }
                   className="flex size-9 items-center justify-center border bg-muted text-muted-foreground"
                 >
-                  {item.cover ? (
+                  {item.cover?.publicUrl ? (
+                    <Image
+                      src={item.cover.publicUrl}
+                      alt={item.cover.altText ?? ""}
+                      width={36}
+                      height={36}
+                      className="size-9 object-cover"
+                    />
+                  ) : item.cover ? (
                     <ImageIcon aria-hidden="true" />
                   ) : (
                     <ImageOff aria-hidden="true" />

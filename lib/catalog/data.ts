@@ -35,6 +35,7 @@ import {
   productMedia,
   productVariant,
 } from "@/lib/db/schema/index"
+import { getPublicMediaUrl } from "@/lib/storage"
 
 const defaultVariant = alias(productVariant, "default_variant")
 const coverMedia = alias(productMedia, "cover_media")
@@ -179,6 +180,7 @@ export async function listAdminProducts(
       cover: row.coverStorageKey
         ? {
             storageKey: row.coverStorageKey,
+            publicUrl: getPublicMediaUrl(row.coverStorageKey),
             altText: row.coverAltText,
           }
         : null,
@@ -313,6 +315,10 @@ export async function getAdminProduct(
     })),
     media: mediaRows.map((media) => ({
       ...media,
+      publicUrl:
+        media.status === "ready"
+          ? getPublicMediaUrl(media.storageKey)
+          : null,
       createdAt: serializeDate(media.createdAt),
       updatedAt: serializeDate(media.updatedAt),
     })),

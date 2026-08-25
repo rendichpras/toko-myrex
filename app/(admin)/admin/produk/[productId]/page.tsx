@@ -8,6 +8,7 @@ import {
 } from "@/app/(admin)/admin/produk/actions"
 import { AdminPage } from "@/components/admin/admin-page"
 import { ProductForm } from "@/components/admin/products/product-form"
+import { ProductFiles } from "@/components/admin/products/product-files"
 import { ProductLifecycleActions } from "@/components/admin/products/product-lifecycle-actions"
 import {
   productStatusLabels,
@@ -18,6 +19,10 @@ import { Badge } from "@/components/ui/badge"
 import { requireAdmin } from "@/lib/auth/session"
 import { getAdminProduct } from "@/lib/catalog/data"
 import { productIdSchema } from "@/lib/catalog/validation"
+import {
+  getProductAssetMaxBytes,
+  isStorageConfigured,
+} from "@/lib/storage"
 
 export const metadata: Metadata = {
   title: "Edit produk",
@@ -108,6 +113,16 @@ export default async function EditProductPage({
           sku:
             product.variants.find((variant) => variant.isDefault)?.sku ?? null,
         }}
+      />
+
+      <ProductFiles
+        assetMaxBytes={getProductAssetMaxBytes()}
+        assets={product.assets}
+        disabled={isArchived}
+        media={product.media}
+        productId={product.id}
+        productName={product.name}
+        storageConfigured={isStorageConfigured()}
       />
     </AdminPage>
   )

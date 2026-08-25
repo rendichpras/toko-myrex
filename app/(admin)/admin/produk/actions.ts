@@ -13,12 +13,30 @@ import {
   updateCatalogProduct,
 } from "@/lib/catalog/mutations"
 import {
+  CatalogUploadError,
+  completeCatalogUpload,
+  createCatalogUploadIntent,
+  removeCatalogUpload,
+} from "@/lib/catalog/uploads"
+import {
   createProductInputSchema,
   productIdSchema,
   productLifecycleActionSchema,
   type ProductFormState,
   type ProductLifecycleState,
 } from "@/lib/catalog/validation"
+import { isStorageConfigured } from "@/lib/storage"
+import {
+  completeUploadSchema,
+  createUploadIntentSchema,
+  removeUploadSchema,
+  type CompleteUploadInput,
+  type CreateUploadIntentInput,
+} from "@/lib/storage/validation"
+
+export type ProductUploadActionResult<T = undefined> =
+  | { success: true; data: T }
+  | { success: false; message: string }
 
 function readProductForm(formData: FormData) {
   return createProductInputSchema.safeParse({
@@ -185,4 +203,107 @@ export async function changeProductStatus(
   } as const
 
   return { intent, success: successMessages[intent] }
+}
+
+export async function createProductUploadIntent(
+  input: CreateUploadIntentInput
+): Promise<
+  ProductUploadActionResult<{
+    uploadId: string
+    uploadUrl: string
+    contentType: string
+  }>
+> {
+  await requireAdmin("/admin/produk")
+
+  if (!isStorageConfigured()) {
+    return {
+      success: false,
+      message: "Penyimpanan file belum dikonfigurasi.",
+    }
+  }
+
+  const parsed = createUploadIntentSchema.safeParse(input)
+
+  if (!parsed.success) {
+    return {
+      success: false,
+      message: parsed.error.issues[0]?.message ?? "Periksa file yang dipilih.",
+    }
+  }
+
+  try {
+    return {
+      success: true,
+      data: await createCatalogUploadIntent(parsed.data),
+    }
+  } catch (error) {
+    if (error instanceof CatalogUploadError) {
+      return { success: false, message: error.message }
+    }
+
+    console.error("Upload produk gagal disiapkan.", error)
+    return { success: false, message: "Unggahan belum dapat dimulai. Coba lagi." }
+  }
+}
+
+export async function completeProductUpload(
+  input: CompleteUploadInput
+): Promise<
+  ProductUploadActionResult<{ uploadId: string; status: "ready" }>
+> {
+  await requireAdmin("/admin/produk")
+  const parsed = completeUploadSchema.safeParse(input)
+
+  if (!parsed.success) {
+    return { success: false, message: "Unggahan tidak valid. Pilih file lagi." }
+  }
+
+  try {
+    const data = await completeCatalogUpload(parsed.data)
+
+    revalidatePath("/admin/produk")
+    revalidatePath(`/admin/produk/${parsed.data.productId}`)
+
+    return { success: true, data }
+  } catch (error) {
+    if (error instanceof CatalogUploadError) {
+      return { success: false, message: error.message }
+    }
+
+    console.error("Upload produk gagal diverifikasi.", error)
+    return {
+      success: false,
+      message: "File belum dapat diverifikasi. Coba lagi.",
+    }
+  }
+}
+
+export async function removeProductUpload(
+  input: CompleteUploadInput
+): Promise<
+  ProductUploadActionResult<{ uploadId: string; status: "archived" }>
+> {
+  await requireAdmin("/admin/produk")
+  const parsed = removeUploadSchema.safeParse(input)
+
+  if (!parsed.success) {
+    return { success: false, message: "File tidak ditemukan. Muat ulang halaman." }
+  }
+
+  try {
+    const data = await removeCatalogUpload(parsed.data)
+
+    revalidatePath("/admin/produk")
+    revalidatePath(`/admin/produk/${parsed.data.productId}`)
+
+    return { success: true, data }
+  } catch (error) {
+    if (error instanceof CatalogUploadError) {
+      return { success: false, message: error.message }
+    }
+
+    console.error("File produk gagal dihapus.", error)
+    return { success: false, message: "File belum dihapus. Coba lagi." }
+  }
 }

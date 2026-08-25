@@ -22,6 +22,7 @@ export type ProductMediaDTO = {
   id: string
   role: ProductMediaRole
   storageKey: string
+  publicUrl: string | null
   mimeType: string
   fileSize: number
   width: number | null
@@ -67,6 +68,7 @@ export type ProductListItemDTO = {
   } | null
   cover: {
     storageKey: string
+    publicUrl: string | null
     altText: string | null
   } | null
 }

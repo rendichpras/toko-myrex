@@ -22,6 +22,39 @@ bun run dev
 
 Aplikasi tersedia di `http://localhost:3000`.
 
+## Penyimpanan file produk
+
+Pengunggahan produk menggunakan dua bucket Cloudflare R2:
+
+- `R2_MEDIA_BUCKET` menyimpan gambar sampul yang sudah diverifikasi dan boleh
+  diakses publik.
+- `R2_PRIVATE_BUCKET` menyimpan staging unggahan dan seluruh file digital.
+
+Isi variabel `R2_*` dan kebijakan file produk di `.env.local`. Atur custom domain
+atau URL publik bucket media pada `R2_MEDIA_PUBLIC_URL`. Bucket privat harus
+memiliki kebijakan CORS untuk origin aplikasi agar browser dapat menjalankan PUT
+ke presigned URL. Contoh pengembangan lokal:
+
+```json
+[
+  {
+    "AllowedOrigins": ["http://localhost:3000"],
+    "AllowedMethods": ["PUT"],
+    "AllowedHeaders": ["Content-Type"],
+    "ExposeHeaders": ["ETag"],
+    "MaxAgeSeconds": 3600
+  }
+]
+```
+
+Tambahkan origin produksi secara eksplisit sebelum deployment. Jangan gunakan
+wildcard untuk origin admin.
+
+Objek yang belum selesai diproses memakai prefix `staging/`. Tambahkan lifecycle
+rule pada bucket privat untuk menghapus prefix tersebut setelah masa retensi yang
+sesuai. Jangan terapkan rule itu pada prefix `products/`, karena prefix tersebut
+berisi file siap dan riwayat versi produk.
+
 ## Struktur kode
 
 - `app/` berisi route, layout, metadata, dan endpoint HTTP.
