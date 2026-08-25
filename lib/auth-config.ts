@@ -11,10 +11,18 @@ import {
 import { compromisedPasswordMessage } from "@/lib/auth-error"
 import { db } from "@/lib/db"
 import * as schema from "@/lib/db/schema/index"
-import { queueAuthEmail } from "@/lib/email"
 
-const buildFallbackSecret =
-  "toko-myrex-build-only-secret-that-cannot-be-used-at-runtime"
+function getAuthSecret() {
+  const secret = process.env.BETTER_AUTH_SECRET
+
+  if (!secret || secret.length < 32) {
+    throw new Error(
+      "BETTER_AUTH_SECRET harus dikonfigurasi dengan minimal 32 karakter."
+    )
+  }
+
+  return secret
+}
 
 function getOrigin(request?: Request) {
   if (process.env.BETTER_AUTH_URL) {
@@ -60,7 +68,7 @@ function emailActionHtml({
 
 export const auth = betterAuth({
   appName: "Toko Myrex",
-  secret: process.env.BETTER_AUTH_SECRET ?? buildFallbackSecret,
+  secret: getAuthSecret(),
   baseURL: process.env.BETTER_AUTH_URL ?? "http://localhost:3000",
   trustedOrigins: getTrustedOrigins(),
   database: drizzleAdapter(db, {
@@ -106,6 +114,8 @@ export const auth = betterAuth({
     }),
     revokeSessionsOnPasswordReset: true,
     sendResetPassword: async ({ user, url }) => {
+      const { queueAuthEmail } = await import("@/lib/email")
+
       queueAuthEmail({
         category: "password_reset",
         to: user.email,
@@ -125,6 +135,8 @@ export const auth = betterAuth({
     sendOnSignUp: true,
     sendOnSignIn: true,
     sendVerificationEmail: async ({ user, token }, request) => {
+      const { queueAuthEmail } = await import("@/lib/email")
+
       const url = new URL("/verifikasi-email", getOrigin(request))
       url.searchParams.set("token", token)
 
