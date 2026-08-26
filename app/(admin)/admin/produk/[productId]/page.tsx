@@ -16,7 +16,6 @@ import {
 } from "@/components/admin/products/product-status"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
-import { requireAdmin } from "@/lib/auth/session"
 import { getAdminProduct } from "@/lib/catalog/data"
 import { productIdSchema } from "@/lib/catalog/validation"
 import {
@@ -34,8 +33,6 @@ export default async function EditProductPage({
   params: Promise<{ productId: string }>
 }) {
   const { productId } = await params
-  await requireAdmin(`/admin/produk/${encodeURIComponent(productId)}`)
-
   const parsedProductId = productIdSchema.safeParse(productId)
 
   if (!parsedProductId.success) {
@@ -107,11 +104,8 @@ export default async function EditProductPage({
           slug: product.slug,
           summary: product.summary,
           description: product.description,
-          priceAmount:
-            product.variants.find((variant) => variant.isDefault)
-              ?.priceAmount ?? 0,
-          sku:
-            product.variants.find((variant) => variant.isDefault)?.sku ?? null,
+          priceAmount: product.defaultVariant?.priceAmount ?? 0,
+          sku: product.defaultVariant?.sku ?? null,
         }}
       />
 
@@ -125,18 +119,17 @@ export default async function EditProductPage({
           rejectionReason: asset.rejectionReason,
           status: asset.status,
         }))}
-        disabled={isArchived}
-        media={product.media.map((media) => ({
-          id: media.id,
-          role: media.role,
-          publicUrl: media.publicUrl,
-          fileSize: media.fileSize,
-          width: media.width,
-          height: media.height,
-          altText: media.altText,
-          rejectionReason: media.rejectionReason,
-          status: media.status,
+        covers={product.covers.map((cover) => ({
+          id: cover.id,
+          publicUrl: cover.publicUrl,
+          fileSize: cover.fileSize,
+          width: cover.width,
+          height: cover.height,
+          altText: cover.altText,
+          rejectionReason: cover.rejectionReason,
+          status: cover.status,
         }))}
+        disabled={isArchived}
         productId={product.id}
         productName={product.name}
         storageConfigured={isStorageConfigured()}

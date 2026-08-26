@@ -1,6 +1,8 @@
 import "server-only"
 
 import {
+  DEFAULT_PRODUCT_ASSET_MAX_BYTES,
+  parseProductAssetMaxBytes,
   parsePublicMediaUrl,
   parseStorageEnvironment,
 } from "@/lib/storage/environment"
@@ -30,7 +32,8 @@ function readStorageEnvironment() {
     R2_UPLOAD_EXPIRES_SECONDS:
       process.env.R2_UPLOAD_EXPIRES_SECONDS ?? "300",
     PRODUCT_ASSET_MAX_BYTES:
-      process.env.PRODUCT_ASSET_MAX_BYTES ?? String(100 * 1024 * 1024),
+      process.env.PRODUCT_ASSET_MAX_BYTES ??
+      String(DEFAULT_PRODUCT_ASSET_MAX_BYTES),
     PRODUCT_ASSET_ALLOWED_MIME_TYPES:
       process.env.PRODUCT_ASSET_ALLOWED_MIME_TYPES ??
       "application/pdf,application/zip,application/x-zip-compressed",
@@ -38,21 +41,15 @@ function readStorageEnvironment() {
 }
 
 export function isStorageConfigured() {
-  return readStorageEnvironment().success
+  return cachedConfig !== undefined || readStorageEnvironment().success
 }
 
 export function getProductAssetMaxBytes() {
-  const configuredValue = Number(process.env.PRODUCT_ASSET_MAX_BYTES)
+  const parsed = parseProductAssetMaxBytes(
+    process.env.PRODUCT_ASSET_MAX_BYTES ?? DEFAULT_PRODUCT_ASSET_MAX_BYTES
+  )
 
-  if (
-    Number.isSafeInteger(configuredValue) &&
-    configuredValue > 0 &&
-    configuredValue <= 5 * 1024 * 1024 * 1024
-  ) {
-    return configuredValue
-  }
-
-  return 100 * 1024 * 1024
+  return parsed.success ? parsed.data : DEFAULT_PRODUCT_ASSET_MAX_BYTES
 }
 
 export function getStorageConfig(): StorageConfig {

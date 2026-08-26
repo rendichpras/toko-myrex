@@ -5,12 +5,6 @@ import nextTs from "eslint-config-next/typescript"
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
-  {
-    files: ["hooks/use-mobile.ts"],
-    rules: {
-      "react-hooks/set-state-in-effect": "off",
-    },
-  },
   globalIgnores([
     ".next/**",
     "out/**",

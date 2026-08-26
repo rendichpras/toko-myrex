@@ -1,11 +1,10 @@
 import { z } from "zod"
 
 import {
+  MAX_PRODUCT_PRICE_AMOUNT,
   PRODUCT_LIST_SORTS,
   PRODUCT_STATUSES,
 } from "@/lib/catalog/constants"
-
-const maximumPriceAmount = 2_147_483_647
 
 function optionalTrimmedText(maximum: number, message: string) {
   return z.preprocess(
@@ -90,7 +89,7 @@ export const productPriceAmountSchema = z.preprocess(
     .number({ error: "Masukkan harga produk." })
     .int("Harga harus berupa bilangan bulat.")
     .min(0, "Harga tidak boleh negatif.")
-    .max(maximumPriceAmount, "Masukkan harga yang lebih rendah.")
+    .max(MAX_PRODUCT_PRICE_AMOUNT, "Masukkan harga yang lebih rendah.")
 )
 
 const productDraftFieldsSchema = z.object({
@@ -132,7 +131,9 @@ export const productListQuerySchema = z.object({
 })
 
 export type CreateProductInput = z.input<typeof createProductInputSchema>
+export type CreateProductValues = z.output<typeof createProductInputSchema>
 export type UpdateProductInput = z.input<typeof updateProductInputSchema>
+export type UpdateProductValues = z.output<typeof updateProductInputSchema>
 export type ProductListQueryInput = z.input<typeof productListQuerySchema>
 export type ProductListQuery = z.output<typeof productListQuerySchema>
 export type ProductLifecycleIntent = z.output<

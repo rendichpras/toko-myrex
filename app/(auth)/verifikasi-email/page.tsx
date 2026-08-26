@@ -7,13 +7,9 @@ export const metadata: Metadata = {
   description: "Konfirmasi alamat email untuk mengaktifkan akun Anda.",
 }
 
-type VerifyEmailPageProps = {
-  searchParams: Promise<{ token?: string | string[] }>
-}
-
 export default async function VerifyEmailPage({
   searchParams,
-}: VerifyEmailPageProps) {
+}: PageProps<"/verifikasi-email">) {
   const { token } = await searchParams
   const verificationToken = Array.isArray(token) ? token[0] : token
 

@@ -49,12 +49,6 @@ export type ProductAssetDTO = {
   updatedAt: string
 }
 
-export type ProductCategoryDTO = {
-  id: string
-  name: string
-  slug: string
-}
-
 export type ProductListItemDTO = {
   id: string
   name: string
@@ -77,7 +71,6 @@ export type ProductListItemDTO = {
 export type ProductCoverClientDTO = Pick<
   ProductMediaDTO,
   | "id"
-  | "role"
   | "publicUrl"
   | "fileSize"
   | "width"
@@ -118,10 +111,9 @@ export type ProductDetailDTO = {
   archivedAt: string | null
   createdAt: string
   updatedAt: string
-  variants: ProductVariantDTO[]
-  media: ProductMediaDTO[]
+  defaultVariant: ProductVariantDTO | null
+  covers: ProductMediaDTO[]
   assets: ProductAssetDTO[]
-  categories: ProductCategoryDTO[]
   publicationIssues: ProductPublicationIssue[]
 }
 

@@ -23,6 +23,7 @@ export const PRODUCT_LIST_SORTS = [
 ] as const
 
 export const PRODUCT_CURRENCY = "IDR" as const
+export const MAX_PRODUCT_PRICE_AMOUNT = 2_147_483_647
 
 export type ProductStatus = (typeof PRODUCT_STATUSES)[number]
 export type ProductFileStatus = (typeof PRODUCT_FILE_STATUSES)[number]

@@ -5,15 +5,11 @@ import { and, eq } from "drizzle-orm"
 import { PRODUCT_CURRENCY } from "@/lib/catalog/constants"
 import type { ProductMutationResultDTO } from "@/lib/catalog/dto"
 import {
-  createProductInputSchema,
   getProductPublicationIssues,
-  productMutationIdSchema,
-  updateProductInputSchema,
-  type CreateProductInput,
+  type CreateProductValues,
   type ProductPublicationIssue,
-  type UpdateProductInput,
+  type UpdateProductValues,
 } from "@/lib/catalog/validation"
-import { requireAdmin } from "@/lib/auth/session"
 import { db } from "@/lib/db"
 import {
   product,
@@ -86,11 +82,9 @@ async function withCatalogDatabaseErrors<T>(operation: () => Promise<T>) {
 }
 
 export async function createCatalogProduct(
-  input: CreateProductInput
+  values: CreateProductValues,
+  actorId: string
 ): Promise<ProductMutationResultDTO> {
-  const session = await requireAdmin("/admin/produk/baru")
-  const values = createProductInputSchema.parse(input)
-
   return withCatalogDatabaseErrors(() =>
     db.transaction(async (transaction) => {
       const [createdProduct] = await transaction
@@ -101,8 +95,8 @@ export async function createCatalogProduct(
           summary: values.summary,
           description: values.description,
           status: "draft",
-          createdBy: session.user.id,
-          updatedBy: session.user.id,
+          createdBy: actorId,
+          updatedBy: actorId,
         })
         .returning({ id: product.id, status: product.status })
 
@@ -130,11 +124,9 @@ export async function createCatalogProduct(
 }
 
 export async function updateCatalogProduct(
-  input: UpdateProductInput
+  values: UpdateProductValues,
+  actorId: string
 ): Promise<ProductMutationResultDTO> {
-  const session = await requireAdmin("/admin/produk")
-  const values = updateProductInputSchema.parse(input)
-
   return withCatalogDatabaseErrors(() =>
     db.transaction(async (transaction) => {
       const [currentProduct] = await transaction
@@ -187,7 +179,7 @@ export async function updateCatalogProduct(
           slug: values.slug,
           summary: values.summary,
           description: values.description,
-          updatedBy: session.user.id,
+          updatedBy: actorId,
         })
         .where(eq(product.id, values.productId))
 
@@ -223,11 +215,9 @@ export async function updateCatalogProduct(
 }
 
 export async function publishCatalogProduct(
-  productId: string
+  productId: string,
+  actorId: string
 ): Promise<ProductMutationResultDTO> {
-  const session = await requireAdmin("/admin/produk")
-  const { productId: id } = productMutationIdSchema.parse({ productId })
-
   return withCatalogDatabaseErrors(() =>
     db.transaction(async (transaction) => {
       const [currentProduct] = await transaction
@@ -240,7 +230,7 @@ export async function publishCatalogProduct(
           publishedAt: product.publishedAt,
         })
         .from(product)
-        .where(eq(product.id, id))
+        .where(eq(product.id, productId))
         .for("update")
         .limit(1)
 
@@ -266,7 +256,7 @@ export async function publishCatalogProduct(
         .from(productVariant)
         .where(
           and(
-            eq(productVariant.productId, id),
+            eq(productVariant.productId, productId),
             eq(productVariant.isDefault, true)
           )
         )
@@ -277,7 +267,7 @@ export async function publishCatalogProduct(
         .from(productMedia)
         .where(
           and(
-            eq(productMedia.productId, id),
+            eq(productMedia.productId, productId),
             eq(productMedia.role, "cover"),
             eq(productMedia.status, "ready")
           )
@@ -289,7 +279,7 @@ export async function publishCatalogProduct(
         .from(productAsset)
         .where(
           and(
-            eq(productAsset.productId, id),
+            eq(productAsset.productId, productId),
             eq(productAsset.status, "ready")
           )
         )
@@ -322,9 +312,9 @@ export async function publishCatalogProduct(
           status: "published",
           publishedAt: currentProduct.publishedAt ?? new Date(),
           archivedAt: null,
-          updatedBy: session.user.id,
+          updatedBy: actorId,
         })
-        .where(eq(product.id, id))
+        .where(eq(product.id, productId))
         .returning({ id: product.id, status: product.status })
 
       if (!publishedProduct) {
@@ -340,16 +330,14 @@ export async function publishCatalogProduct(
 }
 
 export async function archiveCatalogProduct(
-  productId: string
+  productId: string,
+  actorId: string
 ): Promise<ProductMutationResultDTO> {
-  const session = await requireAdmin("/admin/produk")
-  const { productId: id } = productMutationIdSchema.parse({ productId })
-
   return db.transaction(async (transaction) => {
     const [currentProduct] = await transaction
       .select({ id: product.id, status: product.status })
       .from(product)
-      .where(eq(product.id, id))
+      .where(eq(product.id, productId))
       .for("update")
       .limit(1)
 
@@ -366,9 +354,9 @@ export async function archiveCatalogProduct(
       .set({
         status: "archived",
         archivedAt: new Date(),
-        updatedBy: session.user.id,
+        updatedBy: actorId,
       })
-      .where(eq(product.id, id))
+      .where(eq(product.id, productId))
       .returning({ id: product.id, status: product.status })
 
     return archivedProduct ?? currentProduct
@@ -376,16 +364,14 @@ export async function archiveCatalogProduct(
 }
 
 export async function restoreCatalogProduct(
-  productId: string
+  productId: string,
+  actorId: string
 ): Promise<ProductMutationResultDTO> {
-  const session = await requireAdmin("/admin/produk")
-  const { productId: id } = productMutationIdSchema.parse({ productId })
-
   return db.transaction(async (transaction) => {
     const [currentProduct] = await transaction
       .select({ id: product.id, status: product.status })
       .from(product)
-      .where(eq(product.id, id))
+      .where(eq(product.id, productId))
       .for("update")
       .limit(1)
 
@@ -409,9 +395,9 @@ export async function restoreCatalogProduct(
       .set({
         status: "draft",
         archivedAt: null,
-        updatedBy: session.user.id,
+        updatedBy: actorId,
       })
-      .where(eq(product.id, id))
+      .where(eq(product.id, productId))
       .returning({ id: product.id, status: product.status })
 
     return restoredProduct ?? currentProduct

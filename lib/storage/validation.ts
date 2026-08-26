@@ -55,12 +55,12 @@ export const removeUploadSchema = completeUploadSchema
 export type CreateUploadIntentInput = z.input<
   typeof createUploadIntentSchema
 >
+export type CreateUploadIntent = z.output<typeof createUploadIntentSchema>
 export type CompleteUploadInput = z.input<typeof completeUploadSchema>
-export type UploadKind = z.output<typeof completeUploadSchema>["kind"]
+export type CompleteUpload = z.output<typeof completeUploadSchema>
+export type UploadKind = CompleteUpload["kind"]
 
-export function validateUploadRequest(
-  input: z.output<typeof createUploadIntentSchema>
-) {
+export function validateUploadRequest(input: CreateUploadIntent) {
   const extension = FILE_EXTENSION_BY_MIME_TYPE[input.mimeType]
 
   if (!extension) {

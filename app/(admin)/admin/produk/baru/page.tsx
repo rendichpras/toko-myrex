@@ -8,15 +8,12 @@ import {
   productStatusVariants,
 } from "@/components/admin/products/product-status"
 import { Badge } from "@/components/ui/badge"
-import { requireAdmin } from "@/lib/auth/session"
 
 export const metadata: Metadata = {
   title: "Tambah produk",
 }
 
-export default async function NewProductPage() {
-  await requireAdmin("/admin/produk/baru")
-
+export default function NewProductPage() {
   return (
     <AdminPage
       title="Tambah produk"

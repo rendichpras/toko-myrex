@@ -1,6 +1,10 @@
 import { describe, expect, test } from "bun:test"
 
-import { parseStorageEnvironment } from "@/lib/storage/environment"
+import {
+  DEFAULT_PRODUCT_ASSET_MAX_BYTES,
+  parseProductAssetMaxBytes,
+  parseStorageEnvironment,
+} from "@/lib/storage/environment"
 
 const validEnvironment = {
   R2_ACCOUNT_ID: "account",
@@ -10,7 +14,7 @@ const validEnvironment = {
   R2_PRIVATE_BUCKET: "store-private",
   R2_MEDIA_PUBLIC_URL: "https://media.example.com",
   R2_UPLOAD_EXPIRES_SECONDS: "300",
-  PRODUCT_ASSET_MAX_BYTES: "104857600",
+  PRODUCT_ASSET_MAX_BYTES: String(DEFAULT_PRODUCT_ASSET_MAX_BYTES),
   PRODUCT_ASSET_ALLOWED_MIME_TYPES:
     "application/pdf,application/zip,application/x-zip-compressed",
 }
@@ -45,5 +49,15 @@ describe("konfigurasi storage", () => {
     })
 
     expect(result.success).toBe(false)
+  })
+
+  test("menggunakan aturan ukuran aset yang sama untuk parser mandiri", () => {
+    expect(
+      parseProductAssetMaxBytes(String(DEFAULT_PRODUCT_ASSET_MAX_BYTES)).success
+    ).toBe(true)
+    expect(parseProductAssetMaxBytes("0").success).toBe(false)
+    expect(parseProductAssetMaxBytes(String(5 * 1024 * 1024 * 1024 + 1)).success).toBe(
+      false
+    )
   })
 })

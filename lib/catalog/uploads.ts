@@ -1,12 +1,15 @@
 import "server-only"
 
-import { createHash, randomUUID } from "node:crypto"
+import { randomUUID } from "node:crypto"
 
-import { fileTypeFromBuffer } from "file-type"
-import sharp from "sharp"
 import { and, desc, eq } from "drizzle-orm"
 
-import { requireAdmin } from "@/lib/auth/session"
+import {
+  CatalogUploadError,
+  verifyAssetContent,
+  verifyCoverUpload,
+  verifyStagedObjectMetadata,
+} from "@/lib/catalog/upload-verification"
 import { db } from "@/lib/db"
 import {
   product,
@@ -17,36 +20,16 @@ import {
   copyPrivateObject,
   createPresignedUpload,
   deleteObject,
-  getObject,
-  headObject,
   putObject,
+  type StorageBucket,
 } from "@/lib/storage"
 import {
-  COVER_MAX_BYTES,
-  completeUploadSchema,
-  createUploadIntentSchema,
-  mimeTypesMatch,
-  normalizeMimeType,
-  removeUploadSchema,
   validateUploadRequest,
-  type CompleteUploadInput,
-  type CreateUploadIntentInput,
+  type CompleteUpload,
+  type CreateUploadIntent,
 } from "@/lib/storage/validation"
 
-export class CatalogUploadError extends Error {
-  constructor(
-    message: string,
-    public readonly code:
-      | "invalid_file"
-      | "invalid_state"
-      | "not_ready"
-      | "temporary_failure" = "invalid_state",
-    public readonly retryable = false
-  ) {
-    super(message)
-    this.name = "CatalogUploadError"
-  }
-}
+export { CatalogUploadError } from "@/lib/catalog/upload-verification"
 
 type UploadIntentDTO = {
   uploadId: string
@@ -59,9 +42,6 @@ type CompletedUploadDTO = {
   status: "ready"
 }
 
-const maximumCoverDimension = 12_000
-const maximumCoverPixels = 40_000_000
-
 function createStorageKey({
   productId,
   kind,
@@ -73,6 +53,18 @@ function createStorageKey({
 }) {
   const folder = kind === "cover" ? "covers" : "assets"
   return `staging/products/${productId}/${folder}/${randomUUID()}.${extension}`
+}
+
+async function deleteObjectBestEffort(
+  bucket: StorageBucket,
+  storageKey: string,
+  operation: string
+) {
+  try {
+    await deleteObject(bucket, storageKey)
+  } catch (error) {
+    console.error(operation, { bucket, storageKey, error })
+  }
 }
 
 async function ensureMutableProduct(
@@ -116,112 +108,11 @@ async function markRejected(
     })
     .where(eq(table.id, uploadId))
 
-  await deleteObject("private", storageKey).catch(() => undefined)
-}
-
-function verificationError(message: string) {
-  return new CatalogUploadError(
-    `${message} Pilih file lain, lalu coba lagi.`,
-    "invalid_file"
+  await deleteObjectBestEffort(
+    "private",
+    storageKey,
+    "Objek staging yang ditolak gagal dihapus."
   )
-}
-
-async function sanitizeCoverImage(bytes: Uint8Array, mimeType: string) {
-  try {
-    const image = await sharp(bytes).metadata()
-
-    if (!image.width || !image.height) {
-      throw verificationError("Dimensi gambar tidak dapat dibaca.")
-    }
-
-    if (
-      image.width > maximumCoverDimension ||
-      image.height > maximumCoverDimension ||
-      image.width * image.height > maximumCoverPixels
-    ) {
-      throw verificationError("Dimensi gambar terlalu besar.")
-    }
-
-    if ((image.pages ?? 1) > 1) {
-      throw verificationError("Gambar animasi tidak didukung.")
-    }
-
-    const pipeline = sharp(bytes).autoOrient()
-    let extension: "jpg" | "png" | "webp"
-
-    switch (mimeType) {
-      case "image/jpeg":
-        pipeline.jpeg({ quality: 90, progressive: true })
-        extension = "jpg"
-        break
-      case "image/png":
-        pipeline.png({ compressionLevel: 9 })
-        extension = "png"
-        break
-      case "image/webp":
-        pipeline.webp({ quality: 90 })
-        extension = "webp"
-        break
-      default:
-        throw verificationError("Jenis gambar tidak didukung.")
-    }
-
-    const sanitized = await pipeline.toBuffer({ resolveWithObject: true })
-
-    if (sanitized.data.byteLength > COVER_MAX_BYTES) {
-      throw verificationError("Ukuran gambar setelah diproses terlalu besar.")
-    }
-
-    return { ...sanitized, extension }
-  } catch (error) {
-    if (error instanceof CatalogUploadError) {
-      throw error
-    }
-
-    throw verificationError("Data gambar tidak dapat diproses.")
-  }
-}
-
-async function verifyObjectMetadata({
-  storageKey,
-  expectedSize,
-  expectedMimeType,
-}: {
-  storageKey: string
-  expectedSize: number
-  expectedMimeType: string
-}) {
-  let metadata
-
-  try {
-    metadata = await headObject("private", storageKey)
-  } catch {
-    throw new CatalogUploadError(
-      "Unggahan belum ditemukan. Unggah file lagi, lalu coba verifikasi.",
-      "not_ready",
-      true
-    )
-  }
-
-  if (metadata.ContentLength !== expectedSize) {
-    throw verificationError("Ukuran file yang diterima tidak sesuai.")
-  }
-
-  const storedMimeType = normalizeMimeType(metadata.ContentType)
-
-  if (storedMimeType !== expectedMimeType) {
-    throw verificationError("Jenis file yang diterima tidak sesuai.")
-  }
-
-  if (!metadata.ETag) {
-    throw new CatalogUploadError(
-      "Identitas file belum tersedia. Coba verifikasi lagi.",
-      "not_ready",
-      true
-    )
-  }
-
-  return metadata
 }
 
 async function verifyCover(
@@ -235,37 +126,18 @@ async function verifyCover(
   userId: string
 ): Promise<CompletedUploadDTO> {
   try {
-    await verifyObjectMetadata({
+    const verified = await verifyCoverUpload({
       storageKey: upload.storageKey,
       expectedSize: upload.fileSize,
       expectedMimeType: upload.mimeType,
     })
-
-    const object = await getObject("private", upload.storageKey)
-
-    if (!object.Body) {
-      throw verificationError("Isi gambar tidak dapat dibaca.")
-    }
-
-    const bytes = await object.Body.transformToByteArray()
-
-    if (bytes.byteLength !== upload.fileSize) {
-      throw verificationError("Ukuran gambar yang dibaca tidak sesuai.")
-    }
-    const detected = await fileTypeFromBuffer(bytes)
-
-    if (!detected || !mimeTypesMatch(upload.mimeType, detected.mime)) {
-      throw verificationError("Signature gambar tidak sesuai.")
-    }
-
-    const sanitized = await sanitizeCoverImage(bytes, detected.mime)
-    const readyStorageKey = `products/${productId}/covers/${randomUUID()}.${sanitized.extension}`
+    const readyStorageKey = `products/${productId}/covers/${randomUUID()}.${verified.extension}`
 
     await putObject(
       "media",
       readyStorageKey,
-      sanitized.data,
-      detected.mime
+      verified.data,
+      verified.mimeType
     )
 
     let previousCoverKeys: string[] = []
@@ -300,9 +172,9 @@ async function verifyCover(
           .update(productMedia)
           .set({
             storageKey: readyStorageKey,
-            fileSize: sanitized.data.byteLength,
-            width: sanitized.info.width,
-            height: sanitized.info.height,
+            fileSize: verified.data.byteLength,
+            width: verified.width,
+            height: verified.height,
             rejectionReason: null,
             status: "ready",
             updatedAt: new Date(),
@@ -330,13 +202,27 @@ async function verifyCover(
         return previousCovers.map((cover) => cover.storageKey)
       })
     } catch (error) {
-      await deleteObject("media", readyStorageKey).catch(() => undefined)
+      await deleteObjectBestEffort(
+        "media",
+        readyStorageKey,
+        "Sampul terverifikasi gagal dibersihkan setelah transaksi gagal."
+      )
       throw error
     }
 
-    await Promise.allSettled([
-      deleteObject("private", upload.storageKey),
-      ...previousCoverKeys.map((key) => deleteObject("media", key)),
+    await Promise.all([
+      deleteObjectBestEffort(
+        "private",
+        upload.storageKey,
+        "Objek staging sampul gagal dihapus setelah verifikasi."
+      ),
+      ...previousCoverKeys.map((storageKey) =>
+        deleteObjectBestEffort(
+          "media",
+          storageKey,
+          "Sampul lama gagal dihapus setelah penggantian."
+        )
+      ),
     ])
 
     return { uploadId: upload.id, status: "ready" }
@@ -348,49 +234,6 @@ async function verifyCover(
     }
 
     throw error
-  }
-}
-
-async function readAssetSignatureAndChecksum(storageKey: string) {
-  const object = await getObject("private", storageKey)
-
-  if (!object.Body) {
-    throw verificationError("Isi file tidak dapat dibaca.")
-  }
-
-  const hash = createHash("sha256")
-  const signatureChunks: Uint8Array[] = []
-  let signatureLength = 0
-  let bytesRead = 0
-
-  for await (const chunk of object.Body as AsyncIterable<Uint8Array>) {
-    hash.update(chunk)
-    bytesRead += chunk.byteLength
-
-    if (signatureLength < 8192) {
-      const remaining = 8192 - signatureLength
-      const part = chunk.subarray(0, remaining)
-      signatureChunks.push(part)
-      signatureLength += part.byteLength
-    }
-  }
-
-  const signature = new Uint8Array(signatureLength)
-  let offset = 0
-
-  for (const chunk of signatureChunks) {
-    signature.set(chunk, offset)
-    offset += chunk.byteLength
-  }
-
-  try {
-    return {
-      detected: await fileTypeFromBuffer(signature),
-      checksum: hash.digest("hex"),
-      bytesRead,
-    }
-  } catch {
-    throw verificationError("Signature file tidak dapat dibaca.")
   }
 }
 
@@ -407,7 +250,7 @@ async function verifyAsset(
   let readyStorageKey: string | null = null
 
   try {
-    const metadata = await verifyObjectMetadata({
+    const metadata = await verifyStagedObjectMetadata({
       storageKey: upload.storageKey,
       expectedSize: upload.fileSize,
       expectedMimeType: upload.mimeType,
@@ -432,22 +275,20 @@ async function verifyAsset(
           : undefined
 
       if (statusCode === 412) {
-        throw verificationError("File berubah selama verifikasi.")
+        throw new CatalogUploadError(
+          "File berubah selama verifikasi. Pilih file lain, lalu coba lagi.",
+          "invalid_file"
+        )
       }
 
       throw error
     }
 
-    const { detected, checksum, bytesRead } =
-      await readAssetSignatureAndChecksum(readyKey)
-
-    if (bytesRead !== upload.fileSize) {
-      throw verificationError("Ukuran file yang dibaca tidak sesuai.")
-    }
-
-    if (!detected || !mimeTypesMatch(upload.mimeType, detected.mime)) {
-      throw verificationError("Signature file tidak sesuai.")
-    }
+    const { checksum } = await verifyAssetContent({
+      storageKey: readyKey,
+      expectedSize: upload.fileSize,
+      expectedMimeType: upload.mimeType,
+    })
 
     try {
       await db.transaction(async (transaction) => {
@@ -483,16 +324,28 @@ async function verifyAsset(
           .where(eq(product.id, productId))
       })
     } catch (error) {
-      await deleteObject("private", readyKey).catch(() => undefined)
+      await deleteObjectBestEffort(
+        "private",
+        readyKey,
+        "Salinan file produk gagal dibersihkan setelah transaksi gagal."
+      )
       throw error
     }
 
-    await deleteObject("private", upload.storageKey).catch(() => undefined)
+    await deleteObjectBestEffort(
+      "private",
+      upload.storageKey,
+      "Objek staging file produk gagal dihapus setelah verifikasi."
+    )
 
     return { uploadId: upload.id, status: "ready" }
   } catch (error) {
     if (readyStorageKey) {
-      await deleteObject("private", readyStorageKey).catch(() => undefined)
+      await deleteObjectBestEffort(
+        "private",
+        readyStorageKey,
+        "Salinan file produk gagal dibersihkan setelah verifikasi gagal."
+      )
     }
 
     if (error instanceof CatalogUploadError && error.code === "invalid_file") {
@@ -514,10 +367,8 @@ async function verifyAsset(
 }
 
 export async function createCatalogUploadIntent(
-  input: CreateUploadIntentInput
+  values: CreateUploadIntent
 ): Promise<UploadIntentDTO> {
-  await requireAdmin("/admin/produk")
-  const values = createUploadIntentSchema.parse(input)
   const validation = validateUploadRequest(values)
 
   if (!validation.success) {
@@ -603,11 +454,9 @@ export async function createCatalogUploadIntent(
 }
 
 export async function completeCatalogUpload(
-  input: CompleteUploadInput
+  values: CompleteUpload,
+  actorId: string
 ): Promise<CompletedUploadDTO> {
-  const session = await requireAdmin("/admin/produk")
-  const values = completeUploadSchema.parse(input)
-
   if (values.kind === "cover") {
     const [upload] = await db
       .select({
@@ -639,7 +488,7 @@ export async function completeCatalogUpload(
       throw new CatalogUploadError("Unggahan sampul tidak dapat diproses lagi.")
     }
 
-    return verifyCover(upload, values.productId, session.user.id)
+    return verifyCover(upload, values.productId, actorId)
   }
 
   const [upload] = await db
@@ -671,13 +520,13 @@ export async function completeCatalogUpload(
     throw new CatalogUploadError("Unggahan file tidak dapat diproses lagi.")
   }
 
-  return verifyAsset(upload, values.productId, session.user.id)
+  return verifyAsset(upload, values.productId, actorId)
 }
 
-export async function removeCatalogUpload(input: CompleteUploadInput) {
-  const session = await requireAdmin("/admin/produk")
-  const values = removeUploadSchema.parse(input)
-
+export async function removeCatalogUpload(
+  values: CompleteUpload,
+  actorId: string
+) {
   const removal = await db.transaction(async (transaction) => {
     const currentProduct = await ensureMutableProduct(
       transaction,
@@ -717,11 +566,12 @@ export async function removeCatalogUpload(input: CompleteUploadInput) {
 
       await transaction
         .update(product)
-        .set({ updatedBy: session.user.id, updatedAt: new Date() })
+        .set({ updatedBy: actorId, updatedAt: new Date() })
         .where(eq(product.id, values.productId))
 
       return {
-        bucket: upload.status === "ready" ? ("media" as const) : ("private" as const),
+        bucket:
+          upload.status === "ready" ? ("media" as const) : ("private" as const),
         storageKey: upload.storageKey,
         deleteObject: true,
       }
@@ -770,7 +620,7 @@ export async function removeCatalogUpload(input: CompleteUploadInput) {
 
     await transaction
       .update(product)
-      .set({ updatedBy: session.user.id, updatedAt: new Date() })
+      .set({ updatedBy: actorId, updatedAt: new Date() })
       .where(eq(product.id, values.productId))
 
     return {
@@ -781,9 +631,11 @@ export async function removeCatalogUpload(input: CompleteUploadInput) {
   })
 
   if (removal.deleteObject) {
-    await deleteObject(removal.bucket, removal.storageKey).catch((error) => {
-      console.error("Objek R2 yang diarsipkan gagal dihapus.", error)
-    })
+    await deleteObjectBestEffort(
+      removal.bucket,
+      removal.storageKey,
+      "Objek R2 yang diarsipkan gagal dihapus."
+    )
   }
 
   return { uploadId: values.uploadId, status: "archived" as const }

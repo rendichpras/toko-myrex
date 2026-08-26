@@ -26,6 +26,8 @@ export function getAuthErrorMessage(
     case "INVALID_PASSWORD":
     case "USER_NOT_FOUND":
       return "Email atau kata sandi tidak cocok."
+    case "BANNED_USER":
+      return "Akun ini tidak dapat digunakan. Hubungi dukungan jika Anda memerlukan bantuan."
     case "INVALID_CODE":
       return "Kode tidak cocok. Masukkan kode terbaru dari aplikasi autentikator."
     case "INVALID_BACKUP_CODE":

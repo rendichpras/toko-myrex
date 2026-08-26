@@ -1,3 +1,9 @@
+export const ADMIN_HOME_PATH = "/admin/produk"
+
+export function isAdminPath(path: string | undefined): path is string {
+  return path === "/admin" || path?.startsWith("/admin/") === true
+}
+
 export function getSafeRedirectPath(
   value: string | string[] | undefined,
   fallback = "/"
@@ -9,7 +15,7 @@ export function getSafeRedirectPath(
   }
 
   try {
-    const baseUrl = new URL("https://toko-myrex.local")
+    const baseUrl = new URL("https://app.invalid")
     const targetUrl = new URL(requestedPath, baseUrl)
 
     if (targetUrl.origin !== baseUrl.origin) {
@@ -26,5 +32,9 @@ export function resolvePostSignInPath(
   requestedPath: string | undefined,
   userIsAdmin: boolean
 ) {
-  return requestedPath || (userIsAdmin ? "/admin" : "/")
+  if (isAdminPath(requestedPath) && !userIsAdmin) {
+    return "/"
+  }
+
+  return requestedPath || (userIsAdmin ? ADMIN_HOME_PATH : "/")
 }

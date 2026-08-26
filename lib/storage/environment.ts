@@ -2,6 +2,14 @@ import { z } from "zod"
 
 import { PRODUCT_ASSET_MIME_TYPES } from "@/lib/storage/file-policy"
 
+export const DEFAULT_PRODUCT_ASSET_MAX_BYTES = 100 * 1024 * 1024
+
+const productAssetMaxBytesSchema = z.coerce
+  .number()
+  .int()
+  .min(1)
+  .max(5 * 1024 * 1024 * 1024)
+
 const storageEnvironmentSchema = z
   .object({
     R2_ACCOUNT_ID: z.string().trim().min(1),
@@ -13,11 +21,7 @@ const storageEnvironmentSchema = z
       .url()
       .refine((value) => new URL(value).protocol === "https:"),
     R2_UPLOAD_EXPIRES_SECONDS: z.coerce.number().int().min(60).max(900),
-    PRODUCT_ASSET_MAX_BYTES: z.coerce
-      .number()
-      .int()
-      .min(1)
-      .max(5 * 1024 * 1024 * 1024),
+    PRODUCT_ASSET_MAX_BYTES: productAssetMaxBytesSchema,
     PRODUCT_ASSET_ALLOWED_MIME_TYPES: z.string().trim().min(1),
   })
   .superRefine((value, context) => {
@@ -52,6 +56,10 @@ const publicMediaUrlSchema = z
 
 export function parseStorageEnvironment(input: unknown) {
   return storageEnvironmentSchema.safeParse(input)
+}
+
+export function parseProductAssetMaxBytes(input: unknown) {
+  return productAssetMaxBytesSchema.safeParse(input)
 }
 
 export function parsePublicMediaUrl(input: unknown) {

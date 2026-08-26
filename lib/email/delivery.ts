@@ -24,6 +24,19 @@ function summarizeDeliveryError(error: unknown) {
   return message.slice(0, 1_000)
 }
 
+export function scheduleAuthEmail(email: AuthEmail) {
+  after(async () => {
+    try {
+      await sendAuthEmail(email)
+    } catch (error) {
+      console.error("Pengiriman email auth setelah respons gagal.", {
+        category: email.category,
+        error,
+      })
+    }
+  })
+}
+
 export async function sendAuthEmail(email: AuthEmail) {
   const from = process.env.EMAIL_FROM
 
@@ -92,28 +105,26 @@ export async function sendAuthEmail(email: AuthEmail) {
     throw error
   }
 
-  await db
-    .update(emailDelivery)
-    .set({
-      resendId,
-      status: "accepted",
-      detail: null,
-      lastEventAt: new Date(),
-    })
-    .where(
-      and(
-        eq(emailDelivery.id, deliveryId),
-        eq(emailDelivery.status, "queued")
+  try {
+    await db
+      .update(emailDelivery)
+      .set({
+        resendId,
+        status: "accepted",
+        detail: null,
+        lastEventAt: new Date(),
+      })
+      .where(
+        and(
+          eq(emailDelivery.id, deliveryId),
+          eq(emailDelivery.status, "queued")
+        )
       )
-    )
-}
-
-export function queueAuthEmail(email: AuthEmail) {
-  after(async () => {
-    try {
-      await sendAuthEmail(email)
-    } catch (error) {
-      console.error("Pengiriman email auth gagal.", error)
-    }
-  })
+  } catch (error) {
+    console.error("Gagal merekam email yang diterima Resend.", {
+      deliveryId,
+      resendId,
+      error,
+    })
+  }
 }

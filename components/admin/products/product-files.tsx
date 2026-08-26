@@ -2,34 +2,21 @@
 
 import Image from "next/image"
 import { useRef, useState } from "react"
-import {
-  CircleAlert,
-  FileArchive,
-  ImageIcon,
-  Trash2,
-  Upload,
-} from "lucide-react"
+import { CircleAlert, FileArchive, ImageIcon, Upload } from "lucide-react"
 
 import {
   completeProductUpload,
   createProductUploadIntent,
   removeProductUpload,
 } from "@/app/(admin)/admin/produk/actions"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { RemoveProductFileButton } from "@/components/admin/products/remove-product-file-button"
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogMedia,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+  uploadFileToStorage,
+  type ProductUploadKind,
+} from "@/components/admin/products/product-upload-client"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
-import { Button, buttonVariants } from "@/components/ui/button"
+import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
@@ -55,9 +42,10 @@ import type {
   ProductCoverClientDTO,
 } from "@/lib/catalog/dto"
 import { formatBytes } from "@/lib/format"
-import { getMimeTypeFromFileName } from "@/lib/storage/file-policy"
-
-type UploadKind = "cover" | "asset"
+import {
+  PRODUCT_ASSET_MIME_TYPES,
+  getMimeTypeFromFileName,
+} from "@/lib/storage/file-policy"
 
 type UploadState = {
   file: File | null
@@ -89,141 +77,37 @@ const fileStatusVariants = {
   archived: "outline",
 } as const
 
-function putFile(
-  url: string,
-  file: File,
-  contentType: string,
-  onProgress: (progress: number) => void
-) {
-  return new Promise<void>((resolve, reject) => {
-    const request = new XMLHttpRequest()
+const assetAccept = [...PRODUCT_ASSET_MIME_TYPES, ".pdf", ".zip"].join(",")
 
-    request.open("PUT", url)
-    request.setRequestHeader("Content-Type", contentType)
-    request.upload.addEventListener("progress", (event) => {
-      if (event.lengthComputable) {
-        onProgress(Math.round((event.loaded / event.total) * 100))
-      }
-    })
-    request.addEventListener("load", () => {
-      if (request.status >= 200 && request.status < 300) {
-        onProgress(100)
-        resolve()
-        return
-      }
-
-      reject(new Error("R2 menolak unggahan."))
-    })
-    request.addEventListener("error", () => {
-      reject(new Error("Browser tidak dapat menghubungi penyimpanan."))
-    })
-    request.addEventListener("abort", () => {
-      reject(new Error("Unggahan dibatalkan."))
-    })
-    request.send(file)
-  })
-}
-
-function RemoveFileButton({
-  kind,
-  productId,
-  uploadId,
-  label,
-  status,
-}: {
-  kind: UploadKind
-  productId: string
+async function cleanupIncompleteUpload(
+  kind: ProductUploadKind,
+  productId: string,
   uploadId: string
-  label: string
-  status: ProductAssetClientDTO["status"]
-}) {
-  const [open, setOpen] = useState(false)
-  const [pending, setPending] = useState(false)
-  const [message, setMessage] = useState<string | null>(null)
+) {
+  try {
+    const result = await removeProductUpload({ kind, productId, uploadId })
 
-  async function remove() {
-    setPending(true)
-    setMessage(null)
-
-    try {
-      const result = await removeProductUpload({ productId, uploadId, kind })
-
-      if (!result.success) {
-        setMessage(result.message)
-        return
-      }
-
-      setOpen(false)
-    } catch {
-      setMessage("File belum dihapus. Coba lagi.")
-    } finally {
-      setPending(false)
+    if (!result.success) {
+      console.error("Cleanup unggahan produk gagal:", result.message)
     }
+  } catch (error) {
+    console.error("Cleanup unggahan produk gagal.", error)
   }
-
-  return (
-    <AlertDialog open={open} onOpenChange={setOpen}>
-      <AlertDialogTrigger
-        className={buttonVariants({ variant: "ghost", size: "icon-sm" })}
-        aria-label={`Hapus ${label}`}
-        title={`Hapus ${label}`}
-      >
-        <Trash2 aria-hidden="true" />
-      </AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogMedia>
-            <Trash2 aria-hidden="true" />
-          </AlertDialogMedia>
-          <AlertDialogTitle>Hapus file?</AlertDialogTitle>
-          <AlertDialogDescription>
-            {label} akan dihapus dari produk.{" "}
-            {kind === "asset" && status === "ready"
-              ? "File siap tetap disimpan secara privat sebagai riwayat versi."
-              : kind === "cover" && status === "ready"
-                ? "Tambahkan sampul baru sebelum menerbitkan produk."
-                : "Unggahan yang belum siap akan dihapus dari penyimpanan."}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-
-        {message ? (
-          <Alert variant="destructive">
-            <CircleAlert aria-hidden="true" />
-            <AlertTitle>File belum dihapus</AlertTitle>
-            <AlertDescription>{message}</AlertDescription>
-          </Alert>
-        ) : null}
-
-        <AlertDialogFooter>
-          <AlertDialogCancel disabled={pending}>Batal</AlertDialogCancel>
-          <AlertDialogAction
-            type="button"
-            variant="destructive"
-            disabled={pending}
-            onClick={remove}
-          >
-            {pending ? <Spinner aria-hidden="true" /> : <Trash2 aria-hidden="true" />}
-            Hapus file
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-  )
 }
 
 export function ProductFiles({
   assetMaxBytes,
   assets,
+  covers,
   disabled,
-  media,
   productId,
   productName,
   storageConfigured,
 }: {
   assetMaxBytes: number
   assets: ProductAssetClientDTO[]
+  covers: ProductCoverClientDTO[]
   disabled: boolean
-  media: ProductCoverClientDTO[]
   productId: string
   productName: string
   storageConfigured: boolean
@@ -234,14 +118,9 @@ export function ProductFiles({
   const [asset, setAsset] = useState<UploadState>(emptyUploadState)
   const [altTextOverride, setAltTextOverride] = useState<string | null>(null)
   const [downloadName, setDownloadName] = useState("")
-  const readyCover = media.find(
-    (item) => item.role === "cover" && item.status === "ready"
-  )
-  const unfinishedCovers = media.filter(
-    (item) =>
-      item.role === "cover" &&
-      item.status !== "ready" &&
-      item.status !== "archived"
+  const readyCover = covers.find((item) => item.status === "ready")
+  const unfinishedCovers = covers.filter(
+    (item) => item.status !== "ready" && item.status !== "archived"
   )
   const visibleAssets = assets.filter((item) => item.status !== "archived")
   const controlsDisabled = disabled || !storageConfigured
@@ -249,16 +128,28 @@ export function ProductFiles({
   const assetBusy = asset.phase !== "idle"
   const altText = altTextOverride ?? productName
 
-  function selectFile(kind: UploadKind, file: File | null) {
+  function selectFile(kind: ProductUploadKind, file: File | null) {
     const setter = kind === "cover" ? setCover : setAsset
     setter({ ...emptyUploadState, file })
 
-    if (kind === "asset" && file) {
-      setDownloadName(file.name)
+    if (kind === "asset") {
+      setDownloadName(file?.name ?? "")
     }
   }
 
-  async function upload(kind: UploadKind) {
+  function resetInput(kind: ProductUploadKind) {
+    const input = kind === "cover" ? coverInputRef.current : assetInputRef.current
+
+    if (input) {
+      input.value = ""
+    }
+
+    if (kind === "asset") {
+      setDownloadName("")
+    }
+  }
+
+  async function upload(kind: ProductUploadKind) {
     const state = kind === "cover" ? cover : asset
     const setState = kind === "cover" ? setCover : setAsset
     const file = state.file
@@ -313,18 +204,14 @@ export function ProductFiles({
         uploadId = intent.data.uploadId
 
         try {
-          await putFile(
+          await uploadFileToStorage(
             intent.data.uploadUrl,
             file,
             intent.data.contentType,
             (progress) => setState((current) => ({ ...current, progress }))
           )
         } catch (error) {
-          await removeProductUpload({
-            kind,
-            productId,
-            uploadId,
-          }).catch(() => undefined)
+          await cleanupIncompleteUpload(kind, productId, uploadId)
           uploadId = null
           throw error
         }
@@ -352,16 +239,7 @@ export function ProductFiles({
           }))
         } else {
           setState({ ...emptyUploadState, message: completed.message })
-          const input =
-            kind === "cover" ? coverInputRef.current : assetInputRef.current
-
-          if (input) {
-            input.value = ""
-          }
-
-          if (kind === "asset") {
-            setDownloadName("")
-          }
+          resetInput(kind)
         }
 
         return
@@ -369,16 +247,7 @@ export function ProductFiles({
 
       succeeded = true
       setState(emptyUploadState)
-      const input =
-        kind === "cover" ? coverInputRef.current : assetInputRef.current
-
-      if (input) {
-        input.value = ""
-      }
-
-      if (kind === "asset") {
-        setDownloadName("")
-      }
+      resetInput(kind)
     } catch (error) {
       const reason =
         error instanceof Error ? error.message : "Unggahan terputus."
@@ -429,7 +298,7 @@ export function ProductFiles({
                   </p>
                 </div>
                 {!disabled ? (
-                  <RemoveFileButton
+                  <RemoveProductFileButton
                     kind="cover"
                     productId={productId}
                     uploadId={readyCover.id}
@@ -459,7 +328,7 @@ export function ProductFiles({
                   {fileStatusLabels[item.status]}
                 </Badge>
                 {!disabled ? (
-                  <RemoveFileButton
+                  <RemoveProductFileButton
                     kind="cover"
                     productId={productId}
                     uploadId={item.id}
@@ -495,9 +364,7 @@ export function ProductFiles({
                 value={altText}
                 maxLength={500}
                 disabled={controlsDisabled || coverBusy}
-                onChange={(event) => {
-                  setAltTextOverride(event.target.value)
-                }}
+                onChange={(event) => setAltTextOverride(event.target.value)}
               />
               <FieldDescription>
                 Jelaskan isi gambar secara singkat untuk pembaca layar.
@@ -577,7 +444,7 @@ export function ProductFiles({
                       {fileStatusLabels[item.status]}
                     </Badge>
                     {!disabled ? (
-                      <RemoveFileButton
+                      <RemoveProductFileButton
                         kind="asset"
                         productId={productId}
                         uploadId={item.id}
@@ -596,7 +463,7 @@ export function ProductFiles({
                 ref={assetInputRef}
                 id="asset-file"
                 type="file"
-                accept="application/pdf,application/zip,application/x-zip-compressed,.pdf,.zip"
+                accept={assetAccept}
                 disabled={controlsDisabled || assetBusy}
                 aria-describedby="asset-file-description"
                 onChange={(event) =>
@@ -604,7 +471,7 @@ export function ProductFiles({
                 }
               />
               <FieldDescription id="asset-file-description">
-                File dipindai sebelum tersedia untuk pelanggan.
+                Jenis dan integritas file diverifikasi sebelum tersedia untuk pelanggan.
               </FieldDescription>
             </Field>
 
@@ -627,7 +494,7 @@ export function ProductFiles({
               <Progress value={asset.progress}>
                 <ProgressLabel>
                   {asset.phase === "verifying"
-                    ? "Memindai dan memverifikasi file"
+                    ? "Memverifikasi file"
                     : "Mengunggah file"}
                 </ProgressLabel>
                 <ProgressValue>
