@@ -9,7 +9,7 @@ export function getSafeRedirectPath(
   }
 
   try {
-    const baseUrl = new URL("https://toko-myrex.local")
+    const baseUrl = new URL("https://app.invalid")
     const targetUrl = new URL(requestedPath, baseUrl)
 
     if (targetUrl.origin !== baseUrl.origin) {
