@@ -24,7 +24,7 @@ Environment minimum untuk menjalankan core aplikasi dan production build:
 - `BETTER_AUTH_SECRET` minimal 32 karakter
 - `BETTER_AUTH_URL` (`http://localhost:3000` untuk development; HTTPS wajib di production)
 
-Email verifikasi/reset membutuhkan `RESEND_API_KEY` dan `EMAIL_FROM`. `RESEND_WEBHOOK_SECRET` hanya diperlukan untuk endpoint webhook Resend. Konfigurasi `R2_*` bersifat opsional sampai fitur upload produk digunakan.
+Email verifikasi/reset membutuhkan `RESEND_API_KEY` dan `EMAIL_FROM`. Isi `EMAIL_FROM` dengan sender pada domain yang sudah diverifikasi di Resend, misalnya `Toko Myrex <noreply@example.com>`. `RESEND_WEBHOOK_SECRET` hanya diperlukan untuk endpoint webhook Resend. Konfigurasi `R2_*` bersifat opsional sampai fitur upload produk digunakan.
 
 Jangan commit `.env.local` atau secret production ke repository.
 
@@ -54,6 +54,25 @@ bun run auth:create-admin
 ## File produk
 
 Upload menggunakan R2. File masuk ke storage privat terlebih dahulu dan baru ditandai siap setelah metadata, ukuran, signature/MIME, dan integritasnya diverifikasi. Gambar sampul juga diproses ulang menggunakan Sharp sebelum dipublikasikan.
+
+Browser mengunggah langsung ke bucket privat melalui presigned `PUT` URL. Karena request tersebut lintas origin, bucket yang dipakai oleh `R2_PRIVATE_BUCKET` wajib memiliki CORS policy yang mengizinkan setiap origin aplikasi yang benar-benar digunakan. Contoh untuk development lokal dan production:
+
+```json
+[
+  {
+    "AllowedOrigins": [
+      "http://localhost:3000",
+      "https://example.com"
+    ],
+    "AllowedMethods": ["PUT"],
+    "AllowedHeaders": ["Content-Type"],
+    "ExposeHeaders": ["ETag"],
+    "MaxAgeSeconds": 3600
+  }
+]
+```
+
+Ganti `https://example.com` dengan origin production sebenarnya. Origin CORS harus cocok persis dan tidak boleh menyertakan path. Presigned upload juga mengikat `Content-Type`, jadi header yang dikirim browser harus sama dengan tipe yang digunakan saat URL dibuat.
 
 Cleanup upload lama dapat diperiksa tanpa menghapus data:
 
