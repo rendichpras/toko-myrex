@@ -7,13 +7,9 @@ export const metadata: Metadata = {
   description: "Buat kata sandi baru untuk akun Anda.",
 }
 
-type ResetPasswordPageProps = {
-  searchParams: Promise<{ token?: string | string[] }>
-}
-
 export default async function ResetPasswordPage({
   searchParams,
-}: ResetPasswordPageProps) {
+}: PageProps<"/atur-ulang-kata-sandi">) {
   const { token } = await searchParams
   const resetToken = Array.isArray(token) ? token[0] : token
 
