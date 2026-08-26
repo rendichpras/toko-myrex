@@ -10,6 +10,7 @@ import {
 } from "better-auth/api"
 
 import { compromisedPasswordMessage } from "@/lib/auth/errors"
+import { resolveAuthBaseUrl } from "@/lib/auth/origin"
 import { hasUserRole } from "@/lib/auth/roles"
 import {
   AUTH_PASSWORD_MAX_LENGTH,
@@ -29,32 +30,6 @@ function readAuthSecret() {
   }
 
   return secret
-}
-
-function readAuthBaseUrl() {
-  const configuredUrl = process.env.BETTER_AUTH_URL
-
-  if (!configuredUrl) {
-    if (process.env.NODE_ENV === "production") {
-      throw new Error("BETTER_AUTH_URL harus dikonfigurasi di production.")
-    }
-
-    return "http://localhost:3000"
-  }
-
-  let url: URL
-
-  try {
-    url = new URL(configuredUrl)
-  } catch {
-    throw new Error("BETTER_AUTH_URL harus berupa URL yang valid.")
-  }
-
-  if (process.env.NODE_ENV === "production" && url.protocol !== "https:") {
-    throw new Error("BETTER_AUTH_URL harus menggunakan HTTPS di production.")
-  }
-
-  return url.origin
 }
 
 function buildAuthEmailHtml({
@@ -78,7 +53,7 @@ function buildAuthEmailHtml({
 }
 
 export const createAuth = (database: AuthDatabase) => {
-  const baseURL = readAuthBaseUrl()
+  const baseURL = resolveAuthBaseUrl(process.env.BETTER_AUTH_URL)
 
   return betterAuth({
     appName: "Toko Myrex",
