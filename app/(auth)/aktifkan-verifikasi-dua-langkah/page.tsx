@@ -9,8 +9,8 @@ import { requireAdminIdentity } from "@/lib/auth/session"
 const setupPath = "/aktifkan-verifikasi-dua-langkah"
 
 export const metadata: Metadata = {
-  title: "Aktifkan verifikasi dua langkah | Toko Myrex",
-  description: "Tambahkan perlindungan untuk akun admin Toko Myrex.",
+  title: "Aktifkan verifikasi dua langkah",
+  description: "Tambahkan perlindungan untuk akun admin Anda.",
 }
 
 export default async function TwoFactorSetupPage({

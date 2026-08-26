@@ -5,10 +5,10 @@ import { requireAdmin } from "@/lib/auth/session"
 
 export const metadata: Metadata = {
   title: {
-    default: "Admin | Toko Myrex",
-    template: "%s | Admin Toko Myrex",
+    default: "Admin",
+    template: "%s | Admin",
   },
-  description: "Kelola operasional Toko Myrex melalui panel admin.",
+  description: "Kelola operasional toko melalui panel admin.",
   robots: {
     index: false,
     follow: false,

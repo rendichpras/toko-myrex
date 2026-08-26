@@ -70,7 +70,7 @@ function buildAuthEmailHtml({
 }
 
 export const createAuth = (database: AuthDatabase) => betterAuth({
-  appName: "Toko Myrex",
+  appName: "Toko_Myrex",
   secret: readAuthSecret(),
   baseURL: process.env.BETTER_AUTH_URL ?? "http://localhost:3000",
   trustedOrigins: listTrustedAuthOrigins(),
@@ -122,10 +122,10 @@ export const createAuth = (database: AuthDatabase) => betterAuth({
       queueAuthEmail({
         category: "password_reset",
         to: user.email,
-        subject: "Atur ulang kata sandi Toko Myrex",
-        text: `Buat kata sandi baru untuk akun Toko Myrex melalui tautan berikut:\n${url}\n\nAbaikan email ini jika Anda tidak meminta tautan tersebut.`,
+        subject: "Atur ulang kata sandi",
+        text: `Buat kata sandi baru untuk akun Anda melalui tautan berikut:\n${url}\n\nAbaikan email ini jika Anda tidak meminta tautan tersebut.`,
         html: buildAuthEmailHtml({
-          description: "Buat kata sandi baru untuk akun Toko Myrex.",
+          description: "Buat kata sandi baru untuk akun Anda.",
           label: "Buat kata sandi baru",
           notice:
             "Abaikan email ini jika Anda tidak meminta tautan tersebut.",
@@ -146,10 +146,10 @@ export const createAuth = (database: AuthDatabase) => betterAuth({
       queueAuthEmail({
         category: "email_verification",
         to: user.email,
-        subject: "Verifikasi email Toko Myrex",
-        text: `Verifikasi alamat email Anda untuk mengaktifkan akun Toko Myrex:\n${url}\n\nAbaikan email ini jika Anda tidak membuat akun atau mencoba masuk.`,
+        subject: "Verifikasi alamat email",
+        text: `Verifikasi alamat email Anda untuk mengaktifkan akun:\n${url}\n\nAbaikan email ini jika Anda tidak membuat akun atau mencoba masuk.`,
         html: buildAuthEmailHtml({
-          description: "Verifikasi alamat email Anda untuk mengaktifkan akun Toko Myrex.",
+          description: "Verifikasi alamat email Anda untuk mengaktifkan akun.",
           label: "Verifikasi email",
           notice:
             "Abaikan email ini jika Anda tidak membuat akun atau mencoba masuk.",
@@ -203,7 +203,7 @@ export const createAuth = (database: AuthDatabase) => betterAuth({
       adminRoles: ["admin"],
     }),
     twoFactor({
-      issuer: "Toko Myrex",
+      issuer: "Produk Digital",
       backupCodeOptions: {
         storeBackupCodes: "encrypted",
       },

@@ -12,8 +12,8 @@ import {
 import { getSession } from "@/lib/auth/session"
 
 export const metadata: Metadata = {
-  title: "Verifikasi dua langkah | Toko Myrex",
-  description: "Konfirmasi identitas Anda untuk masuk ke Toko Myrex.",
+  title: "Verifikasi dua langkah",
+  description: "Konfirmasi identitas Anda untuk melanjutkan.",
 }
 
 export default async function TwoFactorVerificationPage({

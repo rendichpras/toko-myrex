@@ -50,7 +50,7 @@ export default async function AdminDashboardPage() {
   return (
     <AdminPage
       title="Ringkasan"
-      description={`Selamat datang, ${firstName}. Kelola operasional Toko Myrex dari satu tempat.`}
+      description={`Selamat datang, ${firstName}. Kelola operasional toko dari satu tempat.`}
     >
       <section aria-labelledby="akses-cepat" className="space-y-3">
         <div className="space-y-1">

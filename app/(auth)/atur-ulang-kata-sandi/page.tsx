@@ -3,8 +3,8 @@ import type { Metadata } from "next"
 import { NewPasswordCard } from "@/components/auth/new-password-card"
 
 export const metadata: Metadata = {
-  title: "Atur ulang kata sandi | Toko Myrex",
-  description: "Buat kata sandi baru untuk akun Toko Myrex.",
+  title: "Atur ulang kata sandi",
+  description: "Buat kata sandi baru untuk akun Anda.",
 }
 
 type ResetPasswordPageProps = {

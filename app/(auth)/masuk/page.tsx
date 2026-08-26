@@ -6,8 +6,8 @@ import { SignInForm } from "@/components/auth/sign-in-form"
 import { getSafeRedirectPath } from "@/lib/auth/safe-redirect"
 
 export const metadata: Metadata = {
-  title: "Masuk | Toko Myrex",
-  description: "Masuk untuk mengakses akun Toko Myrex.",
+  title: "Masuk",
+  description: "Masuk untuk mengakses akun Anda.",
 }
 
 export default async function SignInPage({
@@ -17,7 +17,7 @@ export default async function SignInPage({
 
   return (
     <AuthPanel
-      title="Masuk ke Toko Myrex"
+      title="Masuk ke akun Anda"
       description="Masukkan email dan kata sandi Anda."
       navigation={<AuthNavigation activePage="sign-in" />}
     >

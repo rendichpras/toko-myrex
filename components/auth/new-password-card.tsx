@@ -137,7 +137,7 @@ export function NewPasswordCard({ token }: { token: string }) {
   return (
     <AuthPanel
       title="Atur ulang kata sandi"
-      description="Buat kata sandi baru untuk akun Toko Myrex."
+      description="Buat kata sandi baru untuk akun Anda."
       footer={
         <Button
           variant="link"

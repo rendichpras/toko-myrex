@@ -7,14 +7,14 @@ import { createDatabasePool } from "@/lib/db/pool"
 import * as schema from "@/lib/db/schema/index"
 
 const globalForDatabase = globalThis as typeof globalThis & {
-  tokoMyrexDatabasePool?: Pool
+  DatabasePool?: Pool
 }
 
 const pool =
-  globalForDatabase.tokoMyrexDatabasePool ?? createDatabasePool()
+  globalForDatabase.DatabasePool ?? createDatabasePool()
 
 if (process.env.NODE_ENV !== "production") {
-  globalForDatabase.tokoMyrexDatabasePool = pool
+  globalForDatabase.DatabasePool = pool
 }
 
 export const db = drizzle({ client: pool, schema })

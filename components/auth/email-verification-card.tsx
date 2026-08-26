@@ -67,7 +67,7 @@ export function EmailVerificationCard({ token }: { token: string }) {
     return (
       <AuthPanel
         title="Email terverifikasi"
-        description="Akun Toko Myrex Anda siap digunakan."
+        description="Akun Anda siap digunakan."
       >
         <Button
           size="lg"

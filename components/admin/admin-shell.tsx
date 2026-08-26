@@ -111,14 +111,14 @@ export function AdminShell({ children, user }: AdminShellProps) {
           <SidebarHeader>
             <Link
               href="/admin"
-              aria-label="Buka ringkasan admin Toko Myrex"
+              aria-label="Buka ringkasan admin"
               className="flex h-11 items-center gap-2 px-2 outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
             >
               <span className="hidden size-7 shrink-0 items-center justify-center bg-sidebar-primary text-xs font-semibold text-sidebar-primary-foreground group-data-[collapsible=icon]:flex">
-                TM
+                PA
               </span>
               <span className="flex min-w-0 flex-col group-data-[collapsible=icon]:hidden">
-                <span className="truncate text-sm font-semibold">Toko Myrex</span>
+                <span className="truncate text-sm font-semibold">Administrasi</span>
                 <span className="truncate text-xs text-sidebar-foreground/60">
                   Panel admin
                 </span>
