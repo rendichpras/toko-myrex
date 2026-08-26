@@ -70,13 +70,11 @@ export function SignInForm({ redirectTo }: { redirectTo?: string }) {
         "twoFactorRedirect" in signInResult &&
         signInResult.twoFactorRedirect === true
       ) {
-        const twoFactorDestination = redirectTo ?? ADMIN_HOME_PATH
+        const challengePath = redirectTo
+          ? `/verifikasi-dua-langkah?next=${encodeURIComponent(redirectTo)}`
+          : "/verifikasi-dua-langkah"
 
-        router.push(
-          `/verifikasi-dua-langkah?next=${encodeURIComponent(
-            twoFactorDestination
-          )}`
-        )
+        router.replace(challengePath)
         return
       }
 
