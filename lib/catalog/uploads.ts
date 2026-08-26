@@ -21,6 +21,7 @@ import {
   createPresignedUpload,
   deleteObject,
   putObject,
+  type StorageBucket,
 } from "@/lib/storage"
 import {
   validateUploadRequest,
@@ -52,6 +53,18 @@ function createStorageKey({
 }) {
   const folder = kind === "cover" ? "covers" : "assets"
   return `staging/products/${productId}/${folder}/${randomUUID()}.${extension}`
+}
+
+async function deleteObjectBestEffort(
+  bucket: StorageBucket,
+  storageKey: string,
+  operation: string
+) {
+  try {
+    await deleteObject(bucket, storageKey)
+  } catch (error) {
+    console.error(operation, { bucket, storageKey, error })
+  }
 }
 
 async function ensureMutableProduct(
@@ -95,7 +108,11 @@ async function markRejected(
     })
     .where(eq(table.id, uploadId))
 
-  await deleteObject("private", storageKey).catch(() => undefined)
+  await deleteObjectBestEffort(
+    "private",
+    storageKey,
+    "Objek staging yang ditolak gagal dihapus."
+  )
 }
 
 async function verifyCover(
@@ -185,13 +202,27 @@ async function verifyCover(
         return previousCovers.map((cover) => cover.storageKey)
       })
     } catch (error) {
-      await deleteObject("media", readyStorageKey).catch(() => undefined)
+      await deleteObjectBestEffort(
+        "media",
+        readyStorageKey,
+        "Sampul terverifikasi gagal dibersihkan setelah transaksi gagal."
+      )
       throw error
     }
 
-    await Promise.allSettled([
-      deleteObject("private", upload.storageKey),
-      ...previousCoverKeys.map((key) => deleteObject("media", key)),
+    await Promise.all([
+      deleteObjectBestEffort(
+        "private",
+        upload.storageKey,
+        "Objek staging sampul gagal dihapus setelah verifikasi."
+      ),
+      ...previousCoverKeys.map((storageKey) =>
+        deleteObjectBestEffort(
+          "media",
+          storageKey,
+          "Sampul lama gagal dihapus setelah penggantian."
+        )
+      ),
     ])
 
     return { uploadId: upload.id, status: "ready" }
@@ -293,16 +324,28 @@ async function verifyAsset(
           .where(eq(product.id, productId))
       })
     } catch (error) {
-      await deleteObject("private", readyKey).catch(() => undefined)
+      await deleteObjectBestEffort(
+        "private",
+        readyKey,
+        "Salinan file produk gagal dibersihkan setelah transaksi gagal."
+      )
       throw error
     }
 
-    await deleteObject("private", upload.storageKey).catch(() => undefined)
+    await deleteObjectBestEffort(
+      "private",
+      upload.storageKey,
+      "Objek staging file produk gagal dihapus setelah verifikasi."
+    )
 
     return { uploadId: upload.id, status: "ready" }
   } catch (error) {
     if (readyStorageKey) {
-      await deleteObject("private", readyStorageKey).catch(() => undefined)
+      await deleteObjectBestEffort(
+        "private",
+        readyStorageKey,
+        "Salinan file produk gagal dibersihkan setelah verifikasi gagal."
+      )
     }
 
     if (error instanceof CatalogUploadError && error.code === "invalid_file") {
@@ -527,7 +570,8 @@ export async function removeCatalogUpload(
         .where(eq(product.id, values.productId))
 
       return {
-        bucket: upload.status === "ready" ? ("media" as const) : ("private" as const),
+        bucket:
+          upload.status === "ready" ? ("media" as const) : ("private" as const),
         storageKey: upload.storageKey,
         deleteObject: true,
       }
@@ -587,9 +631,11 @@ export async function removeCatalogUpload(
   })
 
   if (removal.deleteObject) {
-    await deleteObject(removal.bucket, removal.storageKey).catch((error) => {
-      console.error("Objek R2 yang diarsipkan gagal dihapus.", error)
-    })
+    await deleteObjectBestEffort(
+      removal.bucket,
+      removal.storageKey,
+      "Objek R2 yang diarsipkan gagal dihapus."
+    )
   }
 
   return { uploadId: values.uploadId, status: "archived" as const }
