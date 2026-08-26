@@ -11,6 +11,7 @@
     "typecheck": "next typegen && tsc --noEmit",
     "check": "bun run lint && bun run typecheck && bun test",
     "test": "bun test",
+    "verify": "bun run check && bun run build",
     "catalog:cleanup-uploads": "bun --conditions=react-server scripts/cleanup-product-uploads.ts",
     "auth:generate": "auth generate --config lib/auth/cli.ts --output lib/db/schema/auth.ts --yes",
     "auth:create-admin": "auth create-admin --config lib/auth/cli.ts",

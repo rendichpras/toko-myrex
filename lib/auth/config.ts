@@ -77,7 +77,7 @@ export const createAuth = (database: AuthDatabase) => {
   const baseURL = readAuthBaseUrl()
 
   return betterAuth({
-    appName: "Produk Digital",
+    appName: "Toko Myrex",
     secret: readAuthSecret(),
     baseURL,
     trustedOrigins: [baseURL],
@@ -210,7 +210,7 @@ export const createAuth = (database: AuthDatabase) => {
         adminRoles: ["admin"],
       }),
       twoFactor({
-        issuer: "Produk Digital",
+        issuer: "Toko Myrex",
         backupCodeOptions: {
           storeBackupCodes: "encrypted",
         },
