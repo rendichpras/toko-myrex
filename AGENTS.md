@@ -57,6 +57,13 @@ This repository is a production application, not a code-generation sandbox. Pref
 - Never expose server secrets to Client Components or `NEXT_PUBLIC_*` variables.
 - Redirect targets derived from user input must remain same-origin paths.
 
+## Generated artifacts
+
+- Treat generated files as generator output, not as a convenient place for manual fixes.
+- Change dependency and package metadata in `package.json`, then regenerate `bun.lock` with the repository's pinned Bun version and review the diff.
+- Change database definitions in `lib/db/schema/`, then generate and review the corresponding Drizzle migration and metadata. Do not hand-edit Drizzle snapshots to imitate a migration.
+- Never update a dependency manifest without keeping its generated lockfile in sync.
+
 ## Code quality
 
 Avoid generated-code habits:
