@@ -124,9 +124,9 @@ export const createAuth = (database: AuthDatabase) => {
       }),
       revokeSessionsOnPasswordReset: true,
       sendResetPassword: async ({ user, url }) => {
-        const { queueAuthEmail } = await import("@/lib/email/delivery")
+        const { sendAuthEmail } = await import("@/lib/email/delivery")
 
-        queueAuthEmail({
+        await sendAuthEmail({
           category: "password_reset",
           to: user.email,
           subject: "Atur ulang kata sandi",
@@ -145,12 +145,12 @@ export const createAuth = (database: AuthDatabase) => {
       sendOnSignUp: true,
       sendOnSignIn: true,
       sendVerificationEmail: async ({ user, token }) => {
-        const { queueAuthEmail } = await import("@/lib/email/delivery")
+        const { sendAuthEmail } = await import("@/lib/email/delivery")
 
         const url = new URL("/verifikasi-email", baseURL)
         url.searchParams.set("token", token)
 
-        queueAuthEmail({
+        await sendAuthEmail({
           category: "email_verification",
           to: user.email,
           subject: "Verifikasi alamat email",

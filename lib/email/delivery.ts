@@ -2,7 +2,6 @@ import "server-only"
 
 import { randomUUID } from "node:crypto"
 import { and, eq } from "drizzle-orm"
-import { after } from "next/server"
 
 import { db } from "@/lib/db"
 import { emailDelivery } from "@/lib/db/schema/index"
@@ -92,28 +91,26 @@ export async function sendAuthEmail(email: AuthEmail) {
     throw error
   }
 
-  await db
-    .update(emailDelivery)
-    .set({
-      resendId,
-      status: "accepted",
-      detail: null,
-      lastEventAt: new Date(),
-    })
-    .where(
-      and(
-        eq(emailDelivery.id, deliveryId),
-        eq(emailDelivery.status, "queued")
+  try {
+    await db
+      .update(emailDelivery)
+      .set({
+        resendId,
+        status: "accepted",
+        detail: null,
+        lastEventAt: new Date(),
+      })
+      .where(
+        and(
+          eq(emailDelivery.id, deliveryId),
+          eq(emailDelivery.status, "queued")
+        )
       )
-    )
-}
-
-export function queueAuthEmail(email: AuthEmail) {
-  after(async () => {
-    try {
-      await sendAuthEmail(email)
-    } catch (error) {
-      console.error("Pengiriman email auth gagal.", error)
-    }
-  })
+  } catch (error) {
+    console.error("Gagal merekam email yang diterima Resend.", {
+      deliveryId,
+      resendId,
+      error,
+    })
+  }
 }
