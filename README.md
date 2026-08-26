@@ -66,7 +66,6 @@ Browser mengunggah langsung ke bucket privat melalui presigned `PUT` URL. Karena
     ],
     "AllowedMethods": ["PUT"],
     "AllowedHeaders": ["Content-Type"],
-    "ExposeHeaders": ["ETag"],
     "MaxAgeSeconds": 3600
   }
 ]
