@@ -16,7 +16,6 @@ import {
 } from "@/components/admin/products/product-status"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
-import { requireAdmin } from "@/lib/auth/session"
 import { getAdminProduct } from "@/lib/catalog/data"
 import { productIdSchema } from "@/lib/catalog/validation"
 import {
@@ -34,8 +33,6 @@ export default async function EditProductPage({
   params: Promise<{ productId: string }>
 }) {
   const { productId } = await params
-  await requireAdmin(`/admin/produk/${encodeURIComponent(productId)}`)
-
   const parsedProductId = productIdSchema.safeParse(productId)
 
   if (!parsedProductId.success) {

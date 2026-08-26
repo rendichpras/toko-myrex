@@ -16,7 +16,6 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty"
-import { requireAdmin } from "@/lib/auth/session"
 import { listAdminProducts } from "@/lib/catalog/data"
 import { buildAdminProductsUrl } from "@/lib/catalog/url"
 import { productListQuerySchema } from "@/lib/catalog/validation"
@@ -36,8 +35,6 @@ function readSearchParam(value: string | string[] | undefined) {
 export default async function AdminProductsPage({
   searchParams,
 }: AdminProductsPageProps) {
-  await requireAdmin("/admin/produk")
-
   const params = await searchParams
   const parsedQuery = productListQuerySchema.safeParse({
     query: readSearchParam(params.query),

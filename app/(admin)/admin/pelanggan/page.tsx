@@ -9,15 +9,12 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty"
-import { requireAdmin } from "@/lib/auth/session"
 
 export const metadata: Metadata = {
   title: "Pelanggan",
 }
 
-export default async function AdminCustomersPage() {
-  await requireAdmin("/admin/pelanggan")
-
+export default function AdminCustomersPage() {
   return (
     <AdminPage
       title="Pelanggan"
