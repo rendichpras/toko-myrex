@@ -2,10 +2,21 @@ import { describe, expect, test } from "bun:test"
 
 import { MAX_PRODUCT_PRICE_AMOUNT } from "@/lib/catalog/constants"
 import {
+  getCanonicalPublicProductSlug,
   getProductPublicationIssues,
   productListQuerySchema,
   productPriceAmountSchema,
 } from "@/lib/catalog/validation"
+
+describe("slug publik produk", () => {
+  test("menerima hanya slug yang sudah kanonis", () => {
+    expect(getCanonicalPublicProductSlug("template-laporan")).toBe(
+      "template-laporan"
+    )
+    expect(getCanonicalPublicProductSlug(" Template-Laporan ")).toBeNull()
+    expect(getCanonicalPublicProductSlug("template--laporan")).toBeNull()
+  })
+})
 
 describe("aturan publikasi produk", () => {
   test("menjelaskan seluruh persyaratan yang belum lengkap", () => {

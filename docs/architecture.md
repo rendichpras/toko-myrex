@@ -70,7 +70,8 @@ The session cookie checked by `proxy.ts` is only an optimistic early redirect. I
 Owns product/catalog domain behavior:
 
 - validated domain values
-- catalog reads and DTOs
+- authenticated admin reads and narrow unauthenticated public read models
+- catalog DTOs
 - create/update/publish/archive/restore state transitions
 - product upload orchestration
 - publication requirements
@@ -146,6 +147,33 @@ A publishable product currently requires the domain data checked by `getProductP
 
 Unique slug and SKU conflicts are enforced by the database and mapped into domain errors for the UI.
 
+## Public storefront
+
+The public storefront is a read-only projection of the existing catalog. The
+homepage lists public products and `/produk/[slug]` renders product detail.
+These routes do not introduce carts, orders, payments, entitlements,
+categories, or customer downloads.
+
+`lib/catalog/public-data.ts` is the unauthenticated public data boundary. A
+product is visible only when it is published and its query projection can find
+an active default variant, a ready cover with dimensions, a non-empty
+description, a publication timestamp, and a ready asset. Inconsistent
+published rows fail closed: they are omitted from the homepage and resolve to
+404 on detail.
+
+Public DTOs expose only storefront fields such as name, canonical slug,
+summary, description, default price, publication date, and the verified public
+cover representation. They do not expose SKU, storage keys, asset records,
+rejection state, or audit-user fields. Invalid, non-canonical, draft, archived,
+and unknown slugs are intentionally indistinguishable at the route boundary.
+
+Public catalog reads are request-time reads. The homepage and sitemap call
+Next.js `connection()` before querying. The product detail route uses a
+page-local React-cached loader that calls `connection()` so its metadata and
+page render share one request-time database result. Cross-request caching and
+cache-tag invalidation are intentionally deferred until the application adopts
+a coherent persistent storefront cache policy.
+
 ## Product upload trust boundary
 
 Uploaded files are untrusted until verification finishes.
@@ -210,6 +238,10 @@ Catalog DTOs are intentional application contracts, not generic enterprise cerem
 
 Admin product detail currently reads the data the UI actually uses: the default variant, covers, and downloadable assets. Do not reintroduce category/gallery overfetch merely because those tables exist in the schema.
 
+Public catalog DTOs are separate from admin DTOs. Keep their projection narrow
+and fail closed rather than reusing an admin object and removing fields in the
+route.
+
 ## UI and React rules
 
 Use Server Components unless interactivity requires a Client Component.
@@ -252,7 +284,8 @@ Before editing a non-trivial feature, locate the existing flow rather than inven
 
 - authentication/session/role change: start with `lib/auth/`, then the relevant auth page/component
 - catalog write: start with the Server Action, validation, then `lib/catalog/mutations.ts`
-- catalog read: start with `lib/catalog/data.ts` and DTOs
+- authenticated catalog read: start with `lib/catalog/data.ts` and DTOs
+- public catalog read: start with `lib/catalog/public-data.ts` and public DTOs
 - product upload: inspect the Server Action, `lib/catalog/uploads.ts`, `upload-verification.ts`, and `lib/storage/`
 - database change: inspect schema source, existing constraints, migration history, then generate a migration
 - email change: inspect Better Auth callback configuration, `lib/email/delivery.ts`, and the Resend webhook route

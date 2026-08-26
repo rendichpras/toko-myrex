@@ -2,6 +2,8 @@ import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import type { ReactNode } from "react"
 
+import { resolveAuthBaseUrl } from "@/lib/auth/origin"
+
 import "./globals.css"
 
 const geistSans = Geist({
@@ -15,6 +17,7 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
+  metadataBase: new URL(resolveAuthBaseUrl(process.env.BETTER_AUTH_URL)),
   title: {
     default: "Toko Myrex",
     template: "%s | Toko Myrex",

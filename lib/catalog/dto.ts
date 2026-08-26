@@ -121,3 +121,26 @@ export type ProductMutationResultDTO = {
   id: string
   status: ProductStatus
 }
+
+export type PublicProductCoverDTO = {
+  publicUrl: string | null
+  width: number
+  height: number
+  altText: string | null
+}
+
+export type PublicProductListItemDTO = {
+  name: string
+  slug: string
+  summary: string | null
+  price: {
+    amount: number
+    currency: string
+  }
+  cover: PublicProductCoverDTO
+}
+
+export type PublicProductDetailDTO = PublicProductListItemDTO & {
+  description: string
+  publishedAt: string
+}

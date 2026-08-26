@@ -51,6 +51,12 @@ export const productSlugSchema = z.preprocess(
     )
 )
 
+export function getCanonicalPublicProductSlug(value: string) {
+  const parsed = productSlugSchema.safeParse(value)
+
+  return parsed.success && parsed.data === value ? parsed.data : null
+}
+
 export const productSummarySchema = optionalTrimmedText(
   320,
   "Batasi ringkasan hingga 320 karakter."

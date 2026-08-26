@@ -34,12 +34,7 @@ import type {
   ProductLifecycleState,
   ProductListQuery,
 } from "@/lib/catalog/validation"
-
-const priceFormatter = new Intl.NumberFormat("id-ID", {
-  style: "currency",
-  currency: "IDR",
-  maximumFractionDigits: 0,
-})
+import { formatIdr } from "@/lib/currency"
 
 const dateFormatter = new Intl.DateTimeFormat("id-ID", {
   dateStyle: "medium",
@@ -151,7 +146,7 @@ export function ProductTable({
               </TableCell>
               <TableCell className="text-right font-medium tabular-nums">
                 {item.defaultVariant
-                  ? priceFormatter.format(item.defaultVariant.priceAmount)
+                  ? formatIdr(item.defaultVariant.priceAmount)
                   : "—"}
               </TableCell>
               <TableCell className="hidden sm:table-cell">
