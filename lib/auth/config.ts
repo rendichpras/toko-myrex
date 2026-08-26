@@ -11,6 +11,10 @@ import {
 
 import { compromisedPasswordMessage } from "@/lib/auth/errors"
 import { hasUserRole } from "@/lib/auth/roles"
+import {
+  AUTH_PASSWORD_MAX_LENGTH,
+  AUTH_PASSWORD_MIN_LENGTH,
+} from "@/lib/auth/validation/credentials"
 import * as authSchema from "@/lib/db/schema/auth"
 
 type AuthDatabase = NodePgDatabase<typeof authSchema>
@@ -109,8 +113,8 @@ export const createAuth = (database: AuthDatabase) => {
     },
     emailAndPassword: {
       enabled: true,
-      minPasswordLength: 8,
-      maxPasswordLength: 128,
+      minPasswordLength: AUTH_PASSWORD_MIN_LENGTH,
+      maxPasswordLength: AUTH_PASSWORD_MAX_LENGTH,
       requireEmailVerification: true,
       customSyntheticUser: ({ coreFields, additionalFields, id }) => ({
         ...coreFields,
