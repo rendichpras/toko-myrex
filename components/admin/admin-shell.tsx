@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import type { ReactNode } from "react"
-import { LayoutDashboard, Package, ReceiptText, Users } from "lucide-react"
+import { Package } from "lucide-react"
 
 import { AdminUserMenu } from "@/components/admin/admin-user-menu"
 import {
@@ -34,10 +34,7 @@ import {
 import { TooltipProvider } from "@/components/ui/tooltip"
 
 const adminNavigationItems = [
-  { href: "/admin", label: "Ringkasan", icon: LayoutDashboard },
   { href: "/admin/produk", label: "Produk", icon: Package },
-  { href: "/admin/pesanan", label: "Pesanan", icon: ReceiptText },
-  { href: "/admin/pelanggan", label: "Pelanggan", icon: Users },
 ] as const
 
 type AdminShellProps = {
@@ -49,9 +46,7 @@ type AdminShellProps = {
 }
 
 function isRouteActive(pathname: string, href: string) {
-  return href === "/admin"
-    ? pathname === href
-    : pathname === href || pathname.startsWith(`${href}/`)
+  return pathname === href || pathname.startsWith(`${href}/`)
 }
 
 function AdminNavigation({ pathname }: { pathname: string }) {
@@ -91,12 +86,7 @@ function AdminNavigation({ pathname }: { pathname: string }) {
 
 export function AdminShell({ children, user }: AdminShellProps) {
   const pathname = usePathname()
-
-  const currentSection =
-    [...adminNavigationItems]
-      .reverse()
-      .find((destination) => isRouteActive(pathname, destination.href)) ??
-    adminNavigationItems[0]
+  const currentSection = adminNavigationItems[0]
   const currentSubpage =
     pathname === "/admin/produk/baru"
       ? "Produk baru"
@@ -110,8 +100,8 @@ export function AdminShell({ children, user }: AdminShellProps) {
         <Sidebar collapsible="icon">
           <SidebarHeader>
             <Link
-              href="/admin"
-              aria-label="Buka ringkasan admin"
+              href="/admin/produk"
+              aria-label="Buka daftar produk"
               className="flex h-11 items-center gap-2 px-2 outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
             >
               <span className="hidden size-7 shrink-0 items-center justify-center bg-sidebar-primary text-xs font-semibold text-sidebar-primary-foreground group-data-[collapsible=icon]:flex">
@@ -157,7 +147,7 @@ export function AdminShell({ children, user }: AdminShellProps) {
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem>
-                  <BreadcrumbLink render={<Link href="/admin" />}>
+                  <BreadcrumbLink render={<Link href="/admin/produk" />}>
                     Admin
                   </BreadcrumbLink>
                 </BreadcrumbItem>
