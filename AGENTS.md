@@ -78,9 +78,10 @@ Split large files by coherent responsibility, not arbitrary line count. A larger
 Before considering a change complete, run:
 
 ```bash
-bun run check
-bun run build
+bun run verify
 ```
+
+`verify` is the repository quality gate: lint, Next.js route type generation, TypeScript, tests, and production build must all pass.
 
 Add or update tests when changing validation, security rules, lifecycle invariants, parsing, file policy, or other behavior that can regress without visual evidence.
 
