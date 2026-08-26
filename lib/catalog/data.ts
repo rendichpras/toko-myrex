@@ -14,6 +14,7 @@ import {
 } from "drizzle-orm"
 import { alias } from "drizzle-orm/pg-core"
 
+import { requireAdmin } from "@/lib/auth/session"
 import type {
   ProductDetailDTO,
   ProductListDTO,
@@ -25,13 +26,10 @@ import {
   type ProductListQuery,
   type ProductListQueryInput,
 } from "@/lib/catalog/validation"
-import { requireAdmin } from "@/lib/auth/session"
 import { db } from "@/lib/db"
 import {
-  category,
   product,
   productAsset,
-  productCategory,
   productMedia,
   productVariant,
 } from "@/lib/db/schema/index"
@@ -220,7 +218,7 @@ export async function getAdminProduct(
     return null
   }
 
-  const [variantRows, mediaRows, assetRows, categoryRows] = await Promise.all([
+  const [variantRows, coverRows, assetRows] = await Promise.all([
     db
       .select({
         id: productVariant.id,
@@ -235,8 +233,13 @@ export async function getAdminProduct(
         updatedAt: productVariant.updatedAt,
       })
       .from(productVariant)
-      .where(eq(productVariant.productId, id))
-      .orderBy(asc(productVariant.position), asc(productVariant.createdAt)),
+      .where(
+        and(
+          eq(productVariant.productId, id),
+          eq(productVariant.isDefault, true)
+        )
+      )
+      .limit(1),
     db
       .select({
         id: productMedia.id,
@@ -254,8 +257,10 @@ export async function getAdminProduct(
         updatedAt: productMedia.updatedAt,
       })
       .from(productMedia)
-      .where(eq(productMedia.productId, id))
-      .orderBy(asc(productMedia.position), asc(productMedia.createdAt)),
+      .where(
+        and(eq(productMedia.productId, id), eq(productMedia.role, "cover"))
+      )
+      .orderBy(desc(productMedia.createdAt)),
     db
       .select({
         id: productAsset.id,
@@ -273,20 +278,9 @@ export async function getAdminProduct(
       .from(productAsset)
       .where(eq(productAsset.productId, id))
       .orderBy(desc(productAsset.version), asc(productAsset.createdAt)),
-    db
-      .select({
-        id: category.id,
-        name: category.name,
-        slug: category.slug,
-      })
-      .from(productCategory)
-      .innerJoin(category, eq(category.id, productCategory.categoryId))
-      .where(eq(productCategory.productId, id))
-      .orderBy(asc(category.name)),
   ])
 
-  const primaryVariant =
-    variantRows.find((variant) => variant.isDefault) ?? null
+  const primaryVariant = variantRows[0] ?? null
   const publicationIssues = getProductPublicationIssues({
     name: productRow.name,
     slug: productRow.slug,
@@ -297,9 +291,7 @@ export async function getAdminProduct(
           priceAmount: primaryVariant.priceAmount,
         }
       : null,
-    hasReadyCover: mediaRows.some(
-      (media) => media.role === "cover" && media.status === "ready"
-    ),
+    hasReadyCover: coverRows.some((media) => media.status === "ready"),
     hasReadyAsset: assetRows.some((asset) => asset.status === "ready"),
   })
 
@@ -309,12 +301,14 @@ export async function getAdminProduct(
     archivedAt: serializeNullableDate(productRow.archivedAt),
     createdAt: serializeDate(productRow.createdAt),
     updatedAt: serializeDate(productRow.updatedAt),
-    variants: variantRows.map((variant) => ({
-      ...variant,
-      createdAt: serializeDate(variant.createdAt),
-      updatedAt: serializeDate(variant.updatedAt),
-    })),
-    media: mediaRows.map((media) => ({
+    defaultVariant: primaryVariant
+      ? {
+          ...primaryVariant,
+          createdAt: serializeDate(primaryVariant.createdAt),
+          updatedAt: serializeDate(primaryVariant.updatedAt),
+        }
+      : null,
+    covers: coverRows.map((media) => ({
       ...media,
       publicUrl:
         media.status === "ready"
@@ -328,7 +322,6 @@ export async function getAdminProduct(
       createdAt: serializeDate(asset.createdAt),
       updatedAt: serializeDate(asset.updatedAt),
     })),
-    categories: categoryRows,
     publicationIssues,
   }
 }

@@ -98,16 +98,16 @@ async function cleanupIncompleteUpload(
 export function ProductFiles({
   assetMaxBytes,
   assets,
+  covers,
   disabled,
-  media,
   productId,
   productName,
   storageConfigured,
 }: {
   assetMaxBytes: number
   assets: ProductAssetClientDTO[]
+  covers: ProductCoverClientDTO[]
   disabled: boolean
-  media: ProductCoverClientDTO[]
   productId: string
   productName: string
   storageConfigured: boolean
@@ -118,14 +118,9 @@ export function ProductFiles({
   const [asset, setAsset] = useState<UploadState>(emptyUploadState)
   const [altTextOverride, setAltTextOverride] = useState<string | null>(null)
   const [downloadName, setDownloadName] = useState("")
-  const readyCover = media.find(
-    (item) => item.role === "cover" && item.status === "ready"
-  )
-  const unfinishedCovers = media.filter(
-    (item) =>
-      item.role === "cover" &&
-      item.status !== "ready" &&
-      item.status !== "archived"
+  const readyCover = covers.find((item) => item.status === "ready")
+  const unfinishedCovers = covers.filter(
+    (item) => item.status !== "ready" && item.status !== "archived"
   )
   const visibleAssets = assets.filter((item) => item.status !== "archived")
   const controlsDisabled = disabled || !storageConfigured

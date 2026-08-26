@@ -104,11 +104,8 @@ export default async function EditProductPage({
           slug: product.slug,
           summary: product.summary,
           description: product.description,
-          priceAmount:
-            product.variants.find((variant) => variant.isDefault)
-              ?.priceAmount ?? 0,
-          sku:
-            product.variants.find((variant) => variant.isDefault)?.sku ?? null,
+          priceAmount: product.defaultVariant?.priceAmount ?? 0,
+          sku: product.defaultVariant?.sku ?? null,
         }}
       />
 
@@ -122,18 +119,17 @@ export default async function EditProductPage({
           rejectionReason: asset.rejectionReason,
           status: asset.status,
         }))}
-        disabled={isArchived}
-        media={product.media.map((media) => ({
-          id: media.id,
-          role: media.role,
-          publicUrl: media.publicUrl,
-          fileSize: media.fileSize,
-          width: media.width,
-          height: media.height,
-          altText: media.altText,
-          rejectionReason: media.rejectionReason,
-          status: media.status,
+        covers={product.covers.map((cover) => ({
+          id: cover.id,
+          publicUrl: cover.publicUrl,
+          fileSize: cover.fileSize,
+          width: cover.width,
+          height: cover.height,
+          altText: cover.altText,
+          rejectionReason: cover.rejectionReason,
+          status: cover.status,
         }))}
+        disabled={isArchived}
         productId={product.id}
         productName={product.name}
         storageConfigured={isStorageConfigured()}
