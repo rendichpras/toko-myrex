@@ -1,8 +1,10 @@
 import { describe, expect, test } from "bun:test"
 
+import { MAX_PRODUCT_PRICE_AMOUNT } from "@/lib/catalog/constants"
 import {
   getProductPublicationIssues,
   productListQuerySchema,
+  productPriceAmountSchema,
 } from "@/lib/catalog/validation"
 
 describe("aturan publikasi produk", () => {
@@ -34,6 +36,17 @@ describe("aturan publikasi produk", () => {
         hasReadyAsset: true,
       })
     ).toEqual([])
+  })
+})
+
+describe("harga produk", () => {
+  test("menggunakan batas integer database yang sama", () => {
+    expect(productPriceAmountSchema.safeParse(MAX_PRODUCT_PRICE_AMOUNT).success).toBe(
+      true
+    )
+    expect(
+      productPriceAmountSchema.safeParse(MAX_PRODUCT_PRICE_AMOUNT + 1).success
+    ).toBe(false)
   })
 })
 

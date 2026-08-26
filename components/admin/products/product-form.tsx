@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/input-group"
 import { Spinner } from "@/components/ui/spinner"
 import { Textarea } from "@/components/ui/textarea"
+import { MAX_PRODUCT_PRICE_AMOUNT } from "@/lib/catalog/constants"
 import type {
   ProductFormField,
   ProductFormState,
@@ -85,10 +86,8 @@ export function ProductForm({
 }: ProductFormProps) {
   const [state, formAction, pending] = useActionState(action, initialState)
   const errorFeedbackRef = useRef<HTMLDivElement>(null)
+  const slugManuallyEdited = useRef(Boolean(defaultValues?.slug))
   const [changedSinceSubmit, setChangedSinceSubmit] = useState(false)
-  const [slugManuallyEdited, setSlugManuallyEdited] = useState(
-    Boolean(defaultValues?.slug)
-  )
   const [values, setValues] = useState({
     name: defaultValues?.name ?? "",
     slug: defaultValues?.slug ?? "",
@@ -100,7 +99,9 @@ export function ProductForm({
         : String(defaultValues.priceAmount),
     sku: defaultValues?.sku ?? "",
   })
-  const formErrors = Object.entries(state.errors ?? {}).filter(
+  const showFeedback = !changedSinceSubmit && !pending
+  const visibleErrors = showFeedback ? state.errors : undefined
+  const formErrors = Object.entries(visibleErrors ?? {}).filter(
     (entry): entry is [ProductFormField, string[]] =>
       Boolean(entry[1]?.length)
   )
@@ -113,10 +114,10 @@ export function ProductForm({
   }
 
   useEffect(() => {
-    if (state.message && !changedSinceSubmit && !pending) {
+    if (state.message && showFeedback) {
       errorFeedbackRef.current?.focus()
     }
-  }, [changedSinceSubmit, pending, state])
+  }, [showFeedback, state.message])
 
   return (
     <form
@@ -125,7 +126,7 @@ export function ProductForm({
       onChange={() => setChangedSinceSubmit(true)}
       onSubmit={() => setChangedSinceSubmit(false)}
     >
-      {state.message && !changedSinceSubmit && !pending ? (
+      {state.message && showFeedback ? (
         <Alert ref={errorFeedbackRef} tabIndex={-1} variant="destructive">
           <CircleAlert aria-hidden="true" />
           <AlertTitle>Perubahan belum disimpan</AlertTitle>
@@ -146,7 +147,7 @@ export function ProductForm({
         </Alert>
       ) : null}
 
-      {state.success && !changedSinceSubmit && !pending ? (
+      {state.success && showFeedback ? (
         <Alert role="status">
           <CircleCheck aria-hidden="true" />
           <AlertTitle>Perubahan disimpan</AlertTitle>
@@ -166,7 +167,7 @@ export function ProductForm({
           </CardHeader>
           <CardContent>
             <FieldGroup>
-              <Field data-invalid={Boolean(state.errors?.name)}>
+              <Field data-invalid={Boolean(visibleErrors?.name)}>
                 <FieldLabel htmlFor="name">Nama produk</FieldLabel>
                 <Input
                   id="name"
@@ -178,7 +179,7 @@ export function ProductForm({
                     setValues((currentValues) => ({
                       ...currentValues,
                       name,
-                      slug: slugManuallyEdited
+                      slug: slugManuallyEdited.current
                         ? currentValues.slug
                         : createSlugCandidate(name),
                     }))
@@ -188,18 +189,18 @@ export function ProductForm({
                   required
                   disabled={disabled || pending}
                   autoComplete="off"
-                  aria-invalid={Boolean(state.errors?.name)}
+                  aria-invalid={Boolean(visibleErrors?.name)}
                   aria-describedby={
-                    state.errors?.name ? "name-error" : undefined
+                    visibleErrors?.name ? "name-error" : undefined
                   }
                 />
                 <FieldError
                   id="name-error"
-                  errors={fieldErrors(state.errors?.name)}
+                  errors={fieldErrors(visibleErrors?.name)}
                 />
               </Field>
 
-              <Field data-invalid={Boolean(state.errors?.slug)}>
+              <Field data-invalid={Boolean(visibleErrors?.slug)}>
                 <FieldLabel htmlFor="slug">Slug</FieldLabel>
                 <Input
                   id="slug"
@@ -208,7 +209,7 @@ export function ProductForm({
                   onChange={(event) => {
                     const slug = event.target.value.toLowerCase()
 
-                    setSlugManuallyEdited(Boolean(slug))
+                    slugManuallyEdited.current = Boolean(slug)
                     updateValue("slug", slug)
                   }}
                   placeholder="template-laporan-keuangan"
@@ -218,9 +219,9 @@ export function ProductForm({
                   autoComplete="off"
                   autoCapitalize="none"
                   spellCheck={false}
-                  aria-invalid={Boolean(state.errors?.slug)}
+                  aria-invalid={Boolean(visibleErrors?.slug)}
                   aria-describedby={
-                    state.errors?.slug
+                    visibleErrors?.slug
                       ? "slug-description slug-error"
                       : "slug-description"
                   }
@@ -232,11 +233,11 @@ export function ProductForm({
                 </FieldDescription>
                 <FieldError
                   id="slug-error"
-                  errors={fieldErrors(state.errors?.slug)}
+                  errors={fieldErrors(visibleErrors?.slug)}
                 />
               </Field>
 
-              <Field data-invalid={Boolean(state.errors?.summary)}>
+              <Field data-invalid={Boolean(visibleErrors?.summary)}>
                 <FieldLabel htmlFor="summary">Ringkasan</FieldLabel>
                 <Textarea
                   id="summary"
@@ -249,9 +250,9 @@ export function ProductForm({
                   maxLength={320}
                   rows={3}
                   disabled={disabled || pending}
-                  aria-invalid={Boolean(state.errors?.summary)}
+                  aria-invalid={Boolean(visibleErrors?.summary)}
                   aria-describedby={
-                    state.errors?.summary
+                    visibleErrors?.summary
                       ? "summary-description summary-error"
                       : "summary-description"
                   }
@@ -261,11 +262,11 @@ export function ProductForm({
                 </FieldDescription>
                 <FieldError
                   id="summary-error"
-                  errors={fieldErrors(state.errors?.summary)}
+                  errors={fieldErrors(visibleErrors?.summary)}
                 />
               </Field>
 
-              <Field data-invalid={Boolean(state.errors?.description)}>
+              <Field data-invalid={Boolean(visibleErrors?.description)}>
                 <FieldLabel htmlFor="description">Deskripsi</FieldLabel>
                 <Textarea
                   id="description"
@@ -278,9 +279,9 @@ export function ProductForm({
                   maxLength={100_000}
                   rows={12}
                   disabled={disabled || pending}
-                  aria-invalid={Boolean(state.errors?.description)}
+                  aria-invalid={Boolean(visibleErrors?.description)}
                   aria-describedby={
-                    state.errors?.description
+                    visibleErrors?.description
                       ? "description-description description-error"
                       : "description-description"
                   }
@@ -291,7 +292,7 @@ export function ProductForm({
                 </FieldDescription>
                 <FieldError
                   id="description-error"
-                  errors={fieldErrors(state.errors?.description)}
+                  errors={fieldErrors(visibleErrors?.description)}
                 />
               </Field>
             </FieldGroup>
@@ -310,7 +311,7 @@ export function ProductForm({
             </CardHeader>
             <CardContent>
               <FieldGroup>
-                <Field data-invalid={Boolean(state.errors?.priceAmount)}>
+                <Field data-invalid={Boolean(visibleErrors?.priceAmount)}>
                   <FieldLabel htmlFor="priceAmount">Harga produk</FieldLabel>
                   <InputGroup>
                     <InputGroupAddon>Rp</InputGroupAddon>
@@ -325,14 +326,14 @@ export function ProductForm({
                       }
                       placeholder="0"
                       min={0}
-                      max={2_147_483_647}
+                      max={MAX_PRODUCT_PRICE_AMOUNT}
                       step={1}
                       required
                       disabled={disabled || pending}
                       autoComplete="off"
-                      aria-invalid={Boolean(state.errors?.priceAmount)}
+                      aria-invalid={Boolean(visibleErrors?.priceAmount)}
                       aria-describedby={
-                        state.errors?.priceAmount
+                        visibleErrors?.priceAmount
                           ? "price-description price-error"
                           : "price-description"
                       }
@@ -343,11 +344,11 @@ export function ProductForm({
                   </FieldDescription>
                   <FieldError
                     id="price-error"
-                    errors={fieldErrors(state.errors?.priceAmount)}
+                    errors={fieldErrors(visibleErrors?.priceAmount)}
                   />
                 </Field>
 
-                <Field data-invalid={Boolean(state.errors?.sku)}>
+                <Field data-invalid={Boolean(visibleErrors?.sku)}>
                   <FieldLabel htmlFor="sku">SKU</FieldLabel>
                   <Input
                     id="sku"
@@ -362,9 +363,9 @@ export function ProductForm({
                     autoComplete="off"
                     autoCapitalize="characters"
                     spellCheck={false}
-                    aria-invalid={Boolean(state.errors?.sku)}
+                    aria-invalid={Boolean(visibleErrors?.sku)}
                     aria-describedby={
-                      state.errors?.sku
+                      visibleErrors?.sku
                         ? "sku-description sku-error"
                         : "sku-description"
                     }
@@ -375,7 +376,7 @@ export function ProductForm({
                   </FieldDescription>
                   <FieldError
                     id="sku-error"
-                    errors={fieldErrors(state.errors?.sku)}
+                    errors={fieldErrors(visibleErrors?.sku)}
                   />
                 </Field>
               </FieldGroup>
