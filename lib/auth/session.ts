@@ -6,13 +6,42 @@ import { redirect } from "next/navigation"
 
 import { auth } from "@/lib/auth"
 import { hasUserRole } from "@/lib/auth/roles"
-import { ADMIN_HOME_PATH } from "@/lib/auth/safe-redirect"
+import {
+  ADMIN_HOME_PATH,
+  isAdminPath,
+  resolvePostSignInPath,
+} from "@/lib/auth/safe-redirect"
 
 export const getSession = cache(async () => {
   return auth.api.getSession({
     headers: await headers(),
   })
 })
+
+export async function redirectAuthenticatedUser(requestedPath?: string) {
+  const session = await getSession()
+
+  if (!session) {
+    return
+  }
+
+  const userIsAdmin = hasUserRole(session.user.role, "admin")
+  const destination = resolvePostSignInPath(requestedPath, userIsAdmin)
+
+  if (userIsAdmin && !session.user.twoFactorEnabled) {
+    const adminDestination = isAdminPath(destination)
+      ? destination
+      : ADMIN_HOME_PATH
+
+    redirect(
+      `/aktifkan-verifikasi-dua-langkah?next=${encodeURIComponent(
+        adminDestination
+      )}`
+    )
+  }
+
+  redirect(destination)
+}
 
 export async function requireSession() {
   const session = await getSession()

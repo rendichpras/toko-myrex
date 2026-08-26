@@ -4,6 +4,7 @@ import { AuthNavigation } from "@/components/auth/auth-navigation"
 import { AuthPanel } from "@/components/auth/auth-panel"
 import { SignInForm } from "@/components/auth/sign-in-form"
 import { getSafeRedirectPath } from "@/lib/auth/safe-redirect"
+import { redirectAuthenticatedUser } from "@/lib/auth/session"
 
 export const metadata: Metadata = {
   title: "Masuk",
@@ -14,6 +15,8 @@ export default async function SignInPage({
   searchParams,
 }: PageProps<"/masuk">) {
   const requestedPath = getSafeRedirectPath((await searchParams).next, "")
+
+  await redirectAuthenticatedUser(requestedPath || undefined)
 
   return (
     <AuthPanel

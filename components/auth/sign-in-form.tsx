@@ -22,6 +22,7 @@ import {
 import { hasUserRole } from "@/lib/auth/roles"
 import {
   ADMIN_HOME_PATH,
+  isAdminPath,
   resolvePostSignInPath,
 } from "@/lib/auth/safe-redirect"
 import {
@@ -84,7 +85,7 @@ export function SignInForm({ redirectTo }: { redirectTo?: string }) {
       if (userIsAdmin && !signInResult?.user.twoFactorEnabled) {
         router.replace(
           `/aktifkan-verifikasi-dua-langkah?next=${encodeURIComponent(
-            redirectTo?.startsWith("/admin") ? redirectTo : ADMIN_HOME_PATH
+            isAdminPath(redirectTo) ? redirectTo : ADMIN_HOME_PATH
           )}`
         )
         router.refresh()

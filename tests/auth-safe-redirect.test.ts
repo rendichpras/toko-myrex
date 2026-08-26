@@ -3,6 +3,7 @@ import { describe, expect, test } from "bun:test"
 import {
   ADMIN_HOME_PATH,
   getSafeRedirectPath,
+  isAdminPath,
   resolvePostSignInPath,
 } from "@/lib/auth/safe-redirect"
 
@@ -34,9 +35,16 @@ describe("redirect auth", () => {
     )
   })
 
-  test("memilih tujuan default berdasarkan role setelah sign in", () => {
+  test("mengenali hanya namespace admin yang sebenarnya", () => {
+    expect(isAdminPath("/admin")).toBe(true)
+    expect(isAdminPath("/admin/produk")).toBe(true)
+    expect(isAdminPath("/administrator")).toBe(false)
+  })
+
+  test("memilih tujuan berdasarkan role setelah sign in", () => {
     expect(resolvePostSignInPath(undefined, true)).toBe(ADMIN_HOME_PATH)
     expect(resolvePostSignInPath(undefined, false)).toBe("/")
     expect(resolvePostSignInPath("/akun", true)).toBe("/akun")
+    expect(resolvePostSignInPath("/admin/produk", false)).toBe("/")
   })
 })
