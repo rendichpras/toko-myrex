@@ -287,8 +287,7 @@ export function ProductForm({
                   }
                 />
                 <FieldDescription id="description-description">
-                  Wajib untuk menerbitkan produk. Gunakan Markdown untuk
-                  memformat teks.
+                  Wajib untuk menerbitkan produk.
                 </FieldDescription>
                 <FieldError
                   id="description-error"
