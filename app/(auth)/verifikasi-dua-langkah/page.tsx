@@ -3,10 +3,7 @@ import Link from "next/link"
 
 import { AuthPanel } from "@/components/auth/auth-panel"
 import { TwoFactorChallengeForm } from "@/components/auth/two-factor-challenge-form"
-import {
-  ADMIN_HOME_PATH,
-  getSafeRedirectPath,
-} from "@/lib/auth/safe-redirect"
+import { getSafeRedirectPath } from "@/lib/auth/safe-redirect"
 import { redirectAuthenticatedUser } from "@/lib/auth/session"
 
 export const metadata: Metadata = {
@@ -21,7 +18,10 @@ export default async function TwoFactorVerificationPage({
 
   await redirectAuthenticatedUser(requestedPath || undefined)
 
-  const redirectTo = requestedPath || ADMIN_HOME_PATH
+  const redirectTo = requestedPath || undefined
+  const signInPath = redirectTo
+    ? `/masuk?next=${encodeURIComponent(redirectTo)}`
+    : "/masuk"
 
   return (
     <AuthPanel
@@ -29,7 +29,7 @@ export default async function TwoFactorVerificationPage({
       description="Masukkan kode dari aplikasi autentikator Anda."
       footer={
         <Link
-          href={`/masuk?next=${encodeURIComponent(redirectTo)}`}
+          href={signInPath}
           className="text-sm font-medium text-primary underline-offset-4 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
         >
           Kembali ke halaman masuk
