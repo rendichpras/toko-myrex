@@ -6,7 +6,6 @@ import { fileTypeFromBuffer } from "file-type"
 import sharp from "sharp"
 import { and, desc, eq } from "drizzle-orm"
 
-import { requireAdmin } from "@/lib/auth/session"
 import { db } from "@/lib/db"
 import {
   product,
@@ -23,14 +22,11 @@ import {
 } from "@/lib/storage"
 import {
   COVER_MAX_BYTES,
-  completeUploadSchema,
-  createUploadIntentSchema,
   mimeTypesMatch,
   normalizeMimeType,
-  removeUploadSchema,
   validateUploadRequest,
-  type CompleteUploadInput,
-  type CreateUploadIntentInput,
+  type CompleteUpload,
+  type CreateUploadIntent,
 } from "@/lib/storage/validation"
 
 export class CatalogUploadError extends Error {
@@ -252,6 +248,7 @@ async function verifyCover(
     if (bytes.byteLength !== upload.fileSize) {
       throw verificationError("Ukuran gambar yang dibaca tidak sesuai.")
     }
+
     const detected = await fileTypeFromBuffer(bytes)
 
     if (!detected || !mimeTypesMatch(upload.mimeType, detected.mime)) {
@@ -514,10 +511,8 @@ async function verifyAsset(
 }
 
 export async function createCatalogUploadIntent(
-  input: CreateUploadIntentInput
+  values: CreateUploadIntent
 ): Promise<UploadIntentDTO> {
-  await requireAdmin("/admin/produk")
-  const values = createUploadIntentSchema.parse(input)
   const validation = validateUploadRequest(values)
 
   if (!validation.success) {
@@ -603,11 +598,9 @@ export async function createCatalogUploadIntent(
 }
 
 export async function completeCatalogUpload(
-  input: CompleteUploadInput
+  values: CompleteUpload,
+  actorId: string
 ): Promise<CompletedUploadDTO> {
-  const session = await requireAdmin("/admin/produk")
-  const values = completeUploadSchema.parse(input)
-
   if (values.kind === "cover") {
     const [upload] = await db
       .select({
@@ -639,7 +632,7 @@ export async function completeCatalogUpload(
       throw new CatalogUploadError("Unggahan sampul tidak dapat diproses lagi.")
     }
 
-    return verifyCover(upload, values.productId, session.user.id)
+    return verifyCover(upload, values.productId, actorId)
   }
 
   const [upload] = await db
@@ -671,13 +664,13 @@ export async function completeCatalogUpload(
     throw new CatalogUploadError("Unggahan file tidak dapat diproses lagi.")
   }
 
-  return verifyAsset(upload, values.productId, session.user.id)
+  return verifyAsset(upload, values.productId, actorId)
 }
 
-export async function removeCatalogUpload(input: CompleteUploadInput) {
-  const session = await requireAdmin("/admin/produk")
-  const values = removeUploadSchema.parse(input)
-
+export async function removeCatalogUpload(
+  values: CompleteUpload,
+  actorId: string
+) {
   const removal = await db.transaction(async (transaction) => {
     const currentProduct = await ensureMutableProduct(
       transaction,
@@ -717,7 +710,7 @@ export async function removeCatalogUpload(input: CompleteUploadInput) {
 
       await transaction
         .update(product)
-        .set({ updatedBy: session.user.id, updatedAt: new Date() })
+        .set({ updatedBy: actorId, updatedAt: new Date() })
         .where(eq(product.id, values.productId))
 
       return {
@@ -770,7 +763,7 @@ export async function removeCatalogUpload(input: CompleteUploadInput) {
 
     await transaction
       .update(product)
-      .set({ updatedBy: session.user.id, updatedAt: new Date() })
+      .set({ updatedBy: actorId, updatedAt: new Date() })
       .where(eq(product.id, values.productId))
 
     return {

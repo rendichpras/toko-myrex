@@ -256,7 +256,7 @@ export async function completeProductUpload(
 ): Promise<
   ProductUploadActionResult<{ uploadId: string; status: "ready" }>
 > {
-  await requireAdmin("/admin/produk")
+  const session = await requireAdmin("/admin/produk")
   const parsed = completeUploadSchema.safeParse(input)
 
   if (!parsed.success) {
@@ -264,7 +264,7 @@ export async function completeProductUpload(
   }
 
   try {
-    const data = await completeCatalogUpload(parsed.data)
+    const data = await completeCatalogUpload(parsed.data, session.user.id)
 
     revalidatePath("/admin/produk")
     revalidatePath(`/admin/produk/${parsed.data.productId}`)
@@ -292,7 +292,7 @@ export async function removeProductUpload(
 ): Promise<
   ProductUploadActionResult<{ uploadId: string; status: "archived" }>
 > {
-  await requireAdmin("/admin/produk")
+  const session = await requireAdmin("/admin/produk")
   const parsed = removeUploadSchema.safeParse(input)
 
   if (!parsed.success) {
@@ -300,7 +300,7 @@ export async function removeProductUpload(
   }
 
   try {
-    const data = await removeCatalogUpload(parsed.data)
+    const data = await removeCatalogUpload(parsed.data, session.user.id)
 
     revalidatePath("/admin/produk")
     revalidatePath(`/admin/produk/${parsed.data.productId}`)
