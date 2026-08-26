@@ -20,11 +20,13 @@ import {
   authConnectionErrorMessage,
   getAuthErrorMessage,
 } from "@/lib/auth/errors"
-import { cn } from "@/lib/utils"
 import {
+  AUTH_PASSWORD_MAX_LENGTH,
+  AUTH_PASSWORD_MIN_LENGTH,
   resetPasswordSchema,
   type AuthFormState,
 } from "@/lib/auth/validation/credentials"
+import { cn } from "@/lib/utils"
 
 function PasswordRule({ valid, children }: { valid: boolean; children: string }) {
   const Icon = valid ? Check : Circle
@@ -53,7 +55,9 @@ export function NewPasswordCard({ token }: { token: string }) {
   const [password, setPassword] = useState("")
   const [passwordConfirmation, setPasswordConfirmation] = useState("")
 
-  const hasValidLength = password.length >= 8 && password.length <= 128
+  const hasValidLength =
+    password.length >= AUTH_PASSWORD_MIN_LENGTH &&
+    password.length <= AUTH_PASSWORD_MAX_LENGTH
   const matches =
     passwordConfirmation.length > 0 && password === passwordConfirmation
 
@@ -155,16 +159,14 @@ export function NewPasswordCard({ token }: { token: string }) {
         className="grid gap-5"
       >
         <Field data-invalid={hasFieldError(errors, "password")}>
-          <FieldLabel htmlFor="reset-password">
-            Kata sandi baru
-          </FieldLabel>
+          <FieldLabel htmlFor="reset-password">Kata sandi baru</FieldLabel>
           <PasswordInput
             id="reset-password"
             name="password"
             placeholder="Masukkan kata sandi baru"
             autoComplete="new-password"
-            minLength={8}
-            maxLength={128}
+            minLength={AUTH_PASSWORD_MIN_LENGTH}
+            maxLength={AUTH_PASSWORD_MAX_LENGTH}
             value={password}
             onChange={(event) => {
               setFormError("")
@@ -194,8 +196,8 @@ export function NewPasswordCard({ token }: { token: string }) {
             name="passwordConfirmation"
             placeholder="Ulangi kata sandi baru"
             autoComplete="new-password"
-            minLength={8}
-            maxLength={128}
+            minLength={AUTH_PASSWORD_MIN_LENGTH}
+            maxLength={AUTH_PASSWORD_MAX_LENGTH}
             value={passwordConfirmation}
             onChange={(event) => {
               setFormError("")
@@ -215,11 +217,9 @@ export function NewPasswordCard({ token }: { token: string }) {
 
         <ul id="reset-password-rules" className="grid gap-1">
           <PasswordRule valid={hasValidLength}>
-            Berisi 8–128 karakter
+            Berisi {AUTH_PASSWORD_MIN_LENGTH}–{AUTH_PASSWORD_MAX_LENGTH} karakter
           </PasswordRule>
-          <PasswordRule valid={matches}>
-            Kedua kata sandi sama
-          </PasswordRule>
+          <PasswordRule valid={matches}>Kedua kata sandi sama</PasswordRule>
         </ul>
 
         {formError ? <AuthFormMessage message={formError} /> : null}
