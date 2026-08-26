@@ -14,6 +14,8 @@ import {
   authConnectionErrorMessage,
   getAuthErrorMessage,
 } from "@/lib/auth/errors"
+import { hasUserRole } from "@/lib/auth/roles"
+import { resolvePostSignInPath } from "@/lib/auth/safe-redirect"
 import {
   backupCodeSchema,
   totpCodeSchema,
@@ -22,7 +24,7 @@ import {
 export function TwoFactorChallengeForm({
   redirectTo,
 }: {
-  redirectTo: string
+  redirectTo?: string
 }) {
   const router = useRouter()
   const [useBackupCode, setUseBackupCode] = useState(false)
@@ -80,7 +82,9 @@ export function TwoFactorChallengeForm({
         return
       }
 
-      router.replace(redirectTo)
+      const userIsAdmin = hasUserRole(verification.data?.user.role, "admin")
+
+      router.replace(resolvePostSignInPath(redirectTo, userIsAdmin))
       router.refresh()
     } catch {
       setFormError(authConnectionErrorMessage)
