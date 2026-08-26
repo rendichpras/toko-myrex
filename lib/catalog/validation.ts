@@ -132,7 +132,9 @@ export const productListQuerySchema = z.object({
 })
 
 export type CreateProductInput = z.input<typeof createProductInputSchema>
+export type CreateProductValues = z.output<typeof createProductInputSchema>
 export type UpdateProductInput = z.input<typeof updateProductInputSchema>
+export type UpdateProductValues = z.output<typeof updateProductInputSchema>
 export type ProductListQueryInput = z.input<typeof productListQuerySchema>
 export type ProductListQuery = z.output<typeof productListQuerySchema>
 export type ProductLifecycleIntent = z.output<

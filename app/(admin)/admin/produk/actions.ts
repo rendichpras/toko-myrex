@@ -88,8 +88,7 @@ export async function createProduct(
   _previousState: ProductFormState,
   formData: FormData
 ): Promise<ProductFormState> {
-  await requireAdmin("/admin/produk/baru")
-
+  const session = await requireAdmin("/admin/produk/baru")
   const parsed = readProductForm(formData)
 
   if (!parsed.success) {
@@ -102,7 +101,7 @@ export async function createProduct(
   let createdProduct
 
   try {
-    createdProduct = await createCatalogProduct(parsed.data)
+    createdProduct = await createCatalogProduct(parsed.data, session.user.id)
   } catch (error) {
     if (error instanceof CatalogMutationError) {
       return getCatalogErrorState(error)
@@ -121,8 +120,7 @@ export async function updateProduct(
   _previousState: ProductFormState,
   formData: FormData
 ): Promise<ProductFormState> {
-  await requireAdmin("/admin/produk")
-
+  const session = await requireAdmin("/admin/produk")
   const parsedId = productIdSchema.safeParse(productId)
   const parsed = readProductForm(formData)
 
@@ -138,7 +136,10 @@ export async function updateProduct(
   }
 
   try {
-    await updateCatalogProduct({ productId: parsedId.data, ...parsed.data })
+    await updateCatalogProduct(
+      { productId: parsedId.data, ...parsed.data },
+      session.user.id
+    )
   } catch (error) {
     if (error instanceof CatalogMutationError) {
       return getCatalogErrorState(error)
@@ -159,8 +160,7 @@ export async function changeProductStatus(
   _previousState: ProductLifecycleState,
   formData: FormData
 ): Promise<ProductLifecycleState> {
-  await requireAdmin("/admin/produk")
-
+  const session = await requireAdmin("/admin/produk")
   const parsed = productLifecycleActionSchema.safeParse({
     productId,
     intent: formData.get("intent"),
@@ -175,13 +175,13 @@ export async function changeProductStatus(
   try {
     switch (intent) {
       case "publish":
-        await publishCatalogProduct(parsed.data.productId)
+        await publishCatalogProduct(parsed.data.productId, session.user.id)
         break
       case "archive":
-        await archiveCatalogProduct(parsed.data.productId)
+        await archiveCatalogProduct(parsed.data.productId, session.user.id)
         break
       case "restore":
-        await restoreCatalogProduct(parsed.data.productId)
+        await restoreCatalogProduct(parsed.data.productId, session.user.id)
         break
     }
   } catch (error) {
