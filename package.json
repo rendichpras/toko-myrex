@@ -8,7 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "typecheck": "next typegen && tsc --noEmit",
+    "typecheck": "bun -e \"import { rmSync } from 'node:fs'; rmSync('.next/dev/types', { recursive: true, force: true })\" && next typegen && tsc --noEmit",
     "check": "bun run lint && bun run typecheck && bun test",
     "test": "bun test",
     "verify": "bun run check && bun run build",
