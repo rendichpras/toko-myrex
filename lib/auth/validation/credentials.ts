@@ -1,5 +1,10 @@
 import { z } from "zod"
 
+export const AUTH_NAME_MIN_LENGTH = 2
+export const AUTH_NAME_MAX_LENGTH = 100
+export const AUTH_PASSWORD_MIN_LENGTH = 8
+export const AUTH_PASSWORD_MAX_LENGTH = 128
+
 const emailSchema = z
   .string()
   .trim()
@@ -8,8 +13,14 @@ const emailSchema = z
 
 const passwordSchema = z
   .string()
-  .min(8, "Gunakan minimal 8 karakter.")
-  .max(128, "Gunakan maksimal 128 karakter.")
+  .min(
+    AUTH_PASSWORD_MIN_LENGTH,
+    `Gunakan minimal ${AUTH_PASSWORD_MIN_LENGTH} karakter.`
+  )
+  .max(
+    AUTH_PASSWORD_MAX_LENGTH,
+    `Gunakan maksimal ${AUTH_PASSWORD_MAX_LENGTH} karakter.`
+  )
 
 export const signInSchema = z.object({
   email: emailSchema,
@@ -26,8 +37,14 @@ export const signUpSchema = z
       .string()
       .trim()
       .min(1, "Masukkan nama lengkap.")
-      .min(2, "Gunakan minimal 2 karakter.")
-      .max(100, "Gunakan maksimal 100 karakter."),
+      .min(
+        AUTH_NAME_MIN_LENGTH,
+        `Gunakan minimal ${AUTH_NAME_MIN_LENGTH} karakter.`
+      )
+      .max(
+        AUTH_NAME_MAX_LENGTH,
+        `Gunakan maksimal ${AUTH_NAME_MAX_LENGTH} karakter.`
+      ),
     email: emailSchema,
     password: passwordSchema,
     passwordConfirmation: z.string().min(1, "Ulangi kata sandi."),
