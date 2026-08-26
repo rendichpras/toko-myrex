@@ -1,6 +1,6 @@
 export const ADMIN_HOME_PATH = "/admin/produk"
 
-export function isAdminPath(path: string | undefined) {
+export function isAdminPath(path: string | undefined): path is string {
   return path === "/admin" || path?.startsWith("/admin/") === true
 }
 
