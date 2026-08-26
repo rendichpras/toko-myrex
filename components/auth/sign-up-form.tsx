@@ -25,6 +25,10 @@ import {
   getAuthErrorMessage,
 } from "@/lib/auth/errors"
 import {
+  AUTH_NAME_MAX_LENGTH,
+  AUTH_NAME_MIN_LENGTH,
+  AUTH_PASSWORD_MAX_LENGTH,
+  AUTH_PASSWORD_MIN_LENGTH,
   signUpSchema,
   type AuthFormState,
 } from "@/lib/auth/validation/credentials"
@@ -106,17 +110,15 @@ export function SignUpForm() {
       className="grid gap-5"
     >
       <Field data-invalid={hasFieldError(errors, "name")}>
-        <FieldLabel htmlFor="sign-up-name">
-          Nama lengkap
-        </FieldLabel>
+        <FieldLabel htmlFor="sign-up-name">Nama lengkap</FieldLabel>
         <Input
           id="sign-up-name"
           name="name"
           type="text"
           placeholder="Nama lengkap"
           autoComplete="name"
-          minLength={2}
-          maxLength={100}
+          minLength={AUTH_NAME_MIN_LENGTH}
+          maxLength={AUTH_NAME_MAX_LENGTH}
           aria-invalid={hasFieldError(errors, "name")}
           aria-describedby={
             hasFieldError(errors, "name") ? "sign-up-name-error" : undefined
@@ -131,9 +133,7 @@ export function SignUpForm() {
       </Field>
 
       <Field data-invalid={hasFieldError(errors, "email")}>
-        <FieldLabel htmlFor="sign-up-email">
-          Email
-        </FieldLabel>
+        <FieldLabel htmlFor="sign-up-email">Email</FieldLabel>
         <Input
           id="sign-up-email"
           name="email"
@@ -157,16 +157,14 @@ export function SignUpForm() {
       </Field>
 
       <Field data-invalid={hasFieldError(errors, "password")}>
-        <FieldLabel htmlFor="sign-up-password">
-          Kata sandi
-        </FieldLabel>
+        <FieldLabel htmlFor="sign-up-password">Kata sandi</FieldLabel>
         <PasswordInput
           id="sign-up-password"
           name="password"
           placeholder="Buat kata sandi"
           autoComplete="new-password"
-          minLength={8}
-          maxLength={128}
+          minLength={AUTH_PASSWORD_MIN_LENGTH}
+          maxLength={AUTH_PASSWORD_MAX_LENGTH}
           aria-invalid={hasFieldError(errors, "password")}
           aria-describedby="sign-up-password-description sign-up-password-error"
           onChange={() => {
@@ -181,7 +179,7 @@ export function SignUpForm() {
           required
         />
         <FieldDescription id="sign-up-password-description">
-          Gunakan 8–128 karakter.
+          Gunakan {AUTH_PASSWORD_MIN_LENGTH}–{AUTH_PASSWORD_MAX_LENGTH} karakter.
         </FieldDescription>
         <FieldError id="sign-up-password-error">
           {errors?.password?.[0]}
@@ -197,8 +195,8 @@ export function SignUpForm() {
           name="passwordConfirmation"
           placeholder="Ulangi kata sandi"
           autoComplete="new-password"
-          minLength={8}
-          maxLength={128}
+          minLength={AUTH_PASSWORD_MIN_LENGTH}
+          maxLength={AUTH_PASSWORD_MAX_LENGTH}
           aria-invalid={hasFieldError(errors, "passwordConfirmation")}
           aria-describedby={
             hasFieldError(errors, "passwordConfirmation")
