@@ -6,6 +6,7 @@ import { AuthPanel } from "@/components/auth/auth-panel"
 import { TwoFactorChallengeForm } from "@/components/auth/two-factor-challenge-form"
 import { hasUserRole } from "@/lib/auth/roles"
 import {
+  ADMIN_HOME_PATH,
   getSafeRedirectPath,
   resolvePostSignInPath,
 } from "@/lib/auth/safe-redirect"
@@ -26,12 +27,10 @@ export default async function TwoFactorVerificationPage({
     const userIsAdmin = hasUserRole(session.user.role, "admin")
     const redirectTo = resolvePostSignInPath(requestedPath, userIsAdmin)
 
-    if (
-      userIsAdmin && !session.user.twoFactorEnabled
-    ) {
+    if (userIsAdmin && !session.user.twoFactorEnabled) {
       redirect(
         `/aktifkan-verifikasi-dua-langkah?next=${encodeURIComponent(
-          redirectTo.startsWith("/admin") ? redirectTo : "/admin"
+          redirectTo.startsWith("/admin") ? redirectTo : ADMIN_HOME_PATH
         )}`
       )
     }
@@ -39,7 +38,7 @@ export default async function TwoFactorVerificationPage({
     redirect(redirectTo)
   }
 
-  const redirectTo = requestedPath || "/admin"
+  const redirectTo = requestedPath || ADMIN_HOME_PATH
 
   return (
     <AuthPanel

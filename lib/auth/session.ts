@@ -6,6 +6,7 @@ import { redirect } from "next/navigation"
 
 import { auth } from "@/lib/auth"
 import { hasUserRole } from "@/lib/auth/roles"
+import { ADMIN_HOME_PATH } from "@/lib/auth/safe-redirect"
 
 export const getSession = cache(async () => {
   return auth.api.getSession({
@@ -23,7 +24,7 @@ export async function requireSession() {
   return session
 }
 
-export async function requireAdmin(redirectTo = "/admin") {
+export async function requireAdmin(redirectTo = ADMIN_HOME_PATH) {
   const session = await requireAdminIdentity(redirectTo)
 
   if (!session.user.twoFactorEnabled) {
@@ -35,7 +36,7 @@ export async function requireAdmin(redirectTo = "/admin") {
   return session
 }
 
-export async function requireAdminIdentity(redirectTo = "/admin") {
+export async function requireAdminIdentity(redirectTo = ADMIN_HOME_PATH) {
   const session = await getSession()
 
   if (!session) {

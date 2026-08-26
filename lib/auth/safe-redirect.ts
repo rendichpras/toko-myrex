@@ -1,3 +1,5 @@
+export const ADMIN_HOME_PATH = "/admin/produk"
+
 export function getSafeRedirectPath(
   value: string | string[] | undefined,
   fallback = "/"
@@ -26,5 +28,5 @@ export function resolvePostSignInPath(
   requestedPath: string | undefined,
   userIsAdmin: boolean
 ) {
-  return requestedPath || (userIsAdmin ? "/admin" : "/")
+  return requestedPath || (userIsAdmin ? ADMIN_HOME_PATH : "/")
 }

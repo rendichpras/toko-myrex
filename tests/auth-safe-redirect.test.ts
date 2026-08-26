@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test"
 
 import {
+  ADMIN_HOME_PATH,
   getSafeRedirectPath,
   resolvePostSignInPath,
 } from "@/lib/auth/safe-redirect"
@@ -28,11 +29,13 @@ describe("redirect auth", () => {
   })
 
   test("menggunakan elemen pertama untuk nilai search param berbentuk array", () => {
-    expect(getSafeRedirectPath(["/admin", "//example.com"])).toBe("/admin")
+    expect(getSafeRedirectPath(["/admin/produk", "//example.com"])).toBe(
+      "/admin/produk"
+    )
   })
 
   test("memilih tujuan default berdasarkan role setelah sign in", () => {
-    expect(resolvePostSignInPath(undefined, true)).toBe("/admin")
+    expect(resolvePostSignInPath(undefined, true)).toBe(ADMIN_HOME_PATH)
     expect(resolvePostSignInPath(undefined, false)).toBe("/")
     expect(resolvePostSignInPath("/akun", true)).toBe("/akun")
   })

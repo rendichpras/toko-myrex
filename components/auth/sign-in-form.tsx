@@ -19,12 +19,15 @@ import {
   authConnectionErrorMessage,
   getAuthErrorMessage,
 } from "@/lib/auth/errors"
+import { hasUserRole } from "@/lib/auth/roles"
+import {
+  ADMIN_HOME_PATH,
+  resolvePostSignInPath,
+} from "@/lib/auth/safe-redirect"
 import {
   signInSchema,
   type AuthFormState,
 } from "@/lib/auth/validation/credentials"
-import { hasUserRole } from "@/lib/auth/roles"
-import { resolvePostSignInPath } from "@/lib/auth/safe-redirect"
 
 export function SignInForm({ redirectTo }: { redirectTo?: string }) {
   const router = useRouter()
@@ -66,7 +69,7 @@ export function SignInForm({ redirectTo }: { redirectTo?: string }) {
         "twoFactorRedirect" in signInResult &&
         signInResult.twoFactorRedirect === true
       ) {
-        const twoFactorDestination = redirectTo ?? "/admin"
+        const twoFactorDestination = redirectTo ?? ADMIN_HOME_PATH
 
         router.push(
           `/verifikasi-dua-langkah?next=${encodeURIComponent(
@@ -81,7 +84,7 @@ export function SignInForm({ redirectTo }: { redirectTo?: string }) {
       if (userIsAdmin && !signInResult?.user.twoFactorEnabled) {
         router.replace(
           `/aktifkan-verifikasi-dua-langkah?next=${encodeURIComponent(
-            redirectTo?.startsWith("/admin") ? redirectTo : "/admin"
+            redirectTo?.startsWith("/admin") ? redirectTo : ADMIN_HOME_PATH
           )}`
         )
         router.refresh()
@@ -105,9 +108,7 @@ export function SignInForm({ redirectTo }: { redirectTo?: string }) {
       className="grid gap-5"
     >
       <Field data-invalid={hasFieldError(errors, "email")}>
-        <FieldLabel htmlFor="sign-in-email">
-          Email
-        </FieldLabel>
+        <FieldLabel htmlFor="sign-in-email">Email</FieldLabel>
         <Input
           id="sign-in-email"
           name="email"
@@ -132,9 +133,7 @@ export function SignInForm({ redirectTo }: { redirectTo?: string }) {
 
       <Field data-invalid={hasFieldError(errors, "password")}>
         <div className="flex items-center justify-between">
-          <FieldLabel htmlFor="sign-in-password">
-            Kata sandi
-          </FieldLabel>
+          <FieldLabel htmlFor="sign-in-password">Kata sandi</FieldLabel>
           <Link
             href="/lupa-kata-sandi"
             className="text-sm font-medium text-primary underline-offset-4 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
