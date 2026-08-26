@@ -37,6 +37,23 @@ const readyCoverCondition = and(
   isNotNull(publicCover.height)
 )
 
+type PublicProductListRow = {
+  name: string
+  slug: string
+  summary: string | null
+  priceAmount: number
+  currency: string
+  coverStorageKey: string
+  coverWidth: number | null
+  coverHeight: number | null
+  coverAltText: string | null
+}
+
+type PublicProductDetailRow = PublicProductListRow & {
+  description: string | null
+  publishedAt: Date | null
+}
+
 function getPublishedProductCondition(slug?: string) {
   const conditions = [
     eq(product.status, "published"),
@@ -106,52 +123,12 @@ export function buildPublicProductDetailQuery(slug: string) {
     .limit(1)
 }
 
-export async function listPublicProducts(): Promise<
-  PublicProductListItemDTO[]
-> {
-  const rows = await buildPublicProductListQuery()
-
-  return rows.flatMap((row) => {
-    if (
-      getCanonicalPublicProductSlug(row.slug) === null ||
-      !row.name.trim() ||
-      row.coverWidth === null ||
-      row.coverHeight === null
-    ) {
-      return []
-    }
-
-    return [
-      {
-        name: row.name,
-        slug: row.slug,
-        summary: row.summary,
-        price: {
-          amount: row.priceAmount,
-          currency: row.currency,
-        },
-        cover: {
-          publicUrl: getPublicMediaUrl(row.coverStorageKey),
-          width: row.coverWidth,
-          height: row.coverHeight,
-          altText: row.coverAltText,
-        },
-      },
-    ]
-  })
-}
-
-export async function getPublicProductBySlug(
-  slug: string
-): Promise<PublicProductDetailDTO | null> {
-  const [row] = await buildPublicProductDetailQuery(slug)
-
+export function toPublicProductListItemDTO(
+  row: PublicProductListRow
+): PublicProductListItemDTO | null {
   if (
-    !row ||
     getCanonicalPublicProductSlug(row.slug) === null ||
     !row.name.trim() ||
-    !row.description?.trim() ||
-    !row.publishedAt ||
     row.coverWidth === null ||
     row.coverHeight === null
   ) {
@@ -162,8 +139,6 @@ export async function getPublicProductBySlug(
     name: row.name,
     slug: row.slug,
     summary: row.summary,
-    description: row.description,
-    publishedAt: row.publishedAt.toISOString(),
     price: {
       amount: row.priceAmount,
       currency: row.currency,
@@ -175,6 +150,40 @@ export async function getPublicProductBySlug(
       altText: row.coverAltText,
     },
   }
+}
+
+export function toPublicProductDetailDTO(
+  row: PublicProductDetailRow
+): PublicProductDetailDTO | null {
+  const listItem = toPublicProductListItemDTO(row)
+
+  if (!listItem || !row.description?.trim() || !row.publishedAt) {
+    return null
+  }
+
+  return {
+    ...listItem,
+    description: row.description,
+    publishedAt: row.publishedAt.toISOString(),
+  }
+}
+
+export async function listPublicProducts(): Promise<
+  PublicProductListItemDTO[]
+> {
+  const rows = await buildPublicProductListQuery()
+
+  return rows.flatMap((row) => {
+    const productItem = toPublicProductListItemDTO(row)
+    return productItem ? [productItem] : []
+  })
+}
+
+export async function getPublicProductBySlug(
+  slug: string
+): Promise<PublicProductDetailDTO | null> {
+  const [row] = await buildPublicProductDetailQuery(slug)
+  return row ? toPublicProductDetailDTO(row) : null
 }
 
 export function buildPublicProductSitemapQuery() {

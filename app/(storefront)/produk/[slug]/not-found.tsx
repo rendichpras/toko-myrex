@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { ArrowLeft, PackageX } from "lucide-react"
 
-import { Button } from "@/components/ui/button"
+import { buttonVariants } from "@/components/ui/button"
 import {
   Empty,
   EmptyContent,
@@ -13,8 +13,8 @@ import {
 
 export default function ProductNotFound() {
   return (
-    <main className="mx-auto flex max-w-7xl flex-1 px-4 py-12 sm:px-6 sm:py-20 lg:px-8">
-      <Empty className="border bg-muted/20 py-20">
+    <main className="mx-auto flex w-full max-w-6xl flex-1 px-4 py-12 sm:px-6 sm:py-20">
+      <Empty className="border py-16">
         <EmptyHeader>
           <EmptyMedia variant="icon">
             <PackageX aria-hidden="true" />
@@ -27,10 +27,10 @@ export default function ProductNotFound() {
           </EmptyDescription>
         </EmptyHeader>
         <EmptyContent>
-          <Button nativeButton={false} render={<Link href="/#produk" />}>
+          <Link href="/#produk" className={buttonVariants()}>
             <ArrowLeft data-icon="inline-start" aria-hidden="true" />
-            Kembali ke katalog
-          </Button>
+            Kembali ke produk
+          </Link>
         </EmptyContent>
       </Empty>
     </main>

@@ -35,56 +35,41 @@ export default async function StorefrontPage() {
 
   return (
     <main className="flex-1">
-      <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
-        <div className="max-w-2xl">
-          <p className="text-xs font-semibold tracking-widest text-primary uppercase">
-            Katalog Toko Myrex
-          </p>
-          <h1 className="mt-4 text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
-            Produk digital, siap Anda jelajahi.
-          </h1>
-          <p className="mt-4 max-w-xl text-base/7 text-muted-foreground sm:text-lg/8">
-            Temukan produk yang membantu pekerjaan dan proyek Anda, lengkap
-            dengan informasi yang jelas sebelum Anda memilih.
-          </p>
-        </div>
-      </section>
-
-      <section
-        id="produk"
-        className="mx-auto grid max-w-7xl gap-8 border-t px-4 py-10 sm:px-6 sm:py-12 lg:px-8"
-        aria-labelledby="product-list-title"
-      >
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h2
-              id="product-list-title"
-              className="text-2xl font-semibold tracking-tight"
-            >
-              Jelajahi produk
-            </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Produk terbaru ditampilkan lebih dahulu.
+      <section className="border-b">
+        <div className="mx-auto grid max-w-6xl gap-6 px-4 py-10 sm:px-6 sm:py-14 lg:grid-cols-[1fr_auto] lg:items-end">
+          <div className="max-w-2xl">
+            <h1 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+              Produk digital
+            </h1>
+            <p className="mt-3 text-base/7 text-muted-foreground sm:text-lg/8">
+              Jelajahi produk yang tersedia dan pelajari detailnya sebelum Anda
+              memilih.
             </p>
           </div>
           <p className="text-sm text-muted-foreground tabular-nums">
             {products.length} produk tersedia
           </p>
         </div>
+      </section>
 
+      <section
+        id="produk"
+        className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10"
+        aria-label="Daftar produk"
+      >
         {products.length > 0 ? (
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {products.map((product) => (
               <ProductCard key={product.slug} product={product} />
             ))}
           </div>
         ) : (
-          <Empty className="border bg-muted/20 py-20">
+          <Empty className="border py-16">
             <EmptyHeader>
               <EmptyMedia variant="icon">
                 <PackageSearch aria-hidden="true" />
               </EmptyMedia>
-              <EmptyTitle role="heading" aria-level={3}>
+              <EmptyTitle role="heading" aria-level={2}>
                 Belum ada produk
               </EmptyTitle>
               <EmptyDescription>
