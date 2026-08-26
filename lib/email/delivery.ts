@@ -2,6 +2,7 @@ import "server-only"
 
 import { randomUUID } from "node:crypto"
 import { and, eq } from "drizzle-orm"
+import { after } from "next/server"
 
 import { db } from "@/lib/db"
 import { emailDelivery } from "@/lib/db/schema/index"
@@ -21,6 +22,19 @@ function summarizeDeliveryError(error: unknown) {
   const message = error instanceof Error ? error.message : "Kesalahan tidak diketahui."
 
   return message.slice(0, 1_000)
+}
+
+export function scheduleAuthEmail(email: AuthEmail) {
+  after(async () => {
+    try {
+      await sendAuthEmail(email)
+    } catch (error) {
+      console.error("Pengiriman email auth setelah respons gagal.", {
+        category: email.category,
+        error,
+      })
+    }
+  })
 }
 
 export async function sendAuthEmail(email: AuthEmail) {
