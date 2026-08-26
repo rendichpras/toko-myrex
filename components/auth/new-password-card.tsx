@@ -1,8 +1,8 @@
 "use client"
 
 import Link from "next/link"
-import { useState, type FormEvent } from "react"
 import { Check, Circle } from "lucide-react"
+import { useState, type FormEvent, type ReactNode } from "react"
 
 import { AuthFormMessage } from "@/components/auth/auth-form-message"
 import { AuthPanel } from "@/components/auth/auth-panel"
@@ -28,7 +28,13 @@ import {
 } from "@/lib/auth/validation/credentials"
 import { cn } from "@/lib/utils"
 
-function PasswordRule({ valid, children }: { valid: boolean; children: string }) {
+function PasswordRule({
+  valid,
+  children,
+}: {
+  valid: boolean
+  children: ReactNode
+}) {
   const Icon = valid ? Check : Circle
 
   return (
