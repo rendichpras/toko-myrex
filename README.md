@@ -18,7 +18,15 @@ bun run db:migrate
 bun run dev
 ```
 
-Isi variabel environment yang diperlukan sebelum menjalankan aplikasi. Jangan commit `.env.local` atau secret production ke repository.
+Environment minimum untuk menjalankan core aplikasi dan production build:
+
+- `DATABASE_URL`
+- `BETTER_AUTH_SECRET` minimal 32 karakter
+- `BETTER_AUTH_URL` (`http://localhost:3000` untuk development; HTTPS wajib di production)
+
+Email verifikasi/reset membutuhkan `RESEND_API_KEY` dan `EMAIL_FROM`. `RESEND_WEBHOOK_SECRET` hanya diperlukan untuk endpoint webhook Resend. Konfigurasi `R2_*` bersifat opsional sampai fitur upload produk digunakan.
+
+Jangan commit `.env.local` atau secret production ke repository.
 
 ## Database
 
