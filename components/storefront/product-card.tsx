@@ -4,6 +4,7 @@ import { ArrowUpRight, ImageIcon } from "lucide-react"
 
 import {
   Card,
+  CardAction,
   CardDescription,
   CardFooter,
   CardHeader,
@@ -13,19 +14,21 @@ import type { PublicProductListItemDTO } from "@/lib/catalog/dto"
 import { formatIdr } from "@/lib/currency"
 
 const productImageSizes =
-  "(min-width: 1024px) 368px, (min-width: 640px) calc(50vw - 2.5rem), calc(100vw - 2rem)"
+  "(min-width: 1280px) 405px, (min-width: 1024px) calc(33vw - 2rem), (min-width: 640px) calc(50vw - 2.5rem), calc(100vw - 2rem)"
 
 export function ProductCard({
   product,
 }: {
   product: PublicProductListItemDTO
 }) {
+  const titleId = `product-${product.slug}`
+
   return (
     <article className="h-full">
       <Link
         href={`/produk/${product.slug}`}
         className="group block h-full outline-none"
-        aria-label={`Lihat ${product.name}`}
+        aria-labelledby={titleId}
       >
         <Card
           size="sm"
@@ -47,10 +50,17 @@ export function ProductCard({
           )}
 
           <CardHeader>
+            <CardAction>
+              <ArrowUpRight
+                className="size-4 text-muted-foreground"
+                aria-hidden="true"
+              />
+            </CardAction>
             <CardTitle
+              id={titleId}
               role="heading"
-              aria-level={2}
-              className="leading-snug group-hover:text-primary"
+              aria-level={3}
+              className="text-lg leading-snug group-hover:text-primary"
             >
               {product.name}
             </CardTitle>
@@ -61,14 +71,10 @@ export function ProductCard({
             ) : null}
           </CardHeader>
 
-          <CardFooter className="mt-auto justify-between">
+          <CardFooter className="mt-auto">
             <span className="font-semibold tabular-nums">
               {formatIdr(product.price.amount)}
             </span>
-            <ArrowUpRight
-              className="size-4 text-muted-foreground group-hover:text-foreground"
-              aria-hidden="true"
-            />
           </CardFooter>
         </Card>
       </Link>

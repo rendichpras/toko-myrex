@@ -4,9 +4,18 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { connection } from "next/server"
 import { cache } from "react"
-import { ArrowLeft, ImageIcon } from "lucide-react"
+import { CalendarDays, ImageIcon } from "lucide-react"
 
-import { buttonVariants } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb"
+import { Separator } from "@/components/ui/separator"
 import { getPublicProductBySlug } from "@/lib/catalog/public-data"
 import { getCanonicalPublicProductSlug } from "@/lib/catalog/validation"
 import { formatIdr } from "@/lib/currency"
@@ -17,7 +26,7 @@ const publishedDateFormatter = new Intl.DateTimeFormat("id-ID", {
 })
 
 const productImageSizes =
-  "(min-width: 1280px) 672px, (min-width: 1024px) 58vw, calc(100vw - 2rem)"
+  "(min-width: 1280px) 720px, (min-width: 1024px) 58vw, (min-width: 640px) calc(100vw - 3rem), calc(100vw - 2rem)"
 
 const loadPublicProduct = cache(async (rawSlug: string) => {
   await connection()
@@ -95,17 +104,23 @@ export default async function PublicProductPage({
 
   return (
     <main className="flex-1">
-      <article className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
-        <Link
-          href="/#produk"
-          className={buttonVariants({ variant: "ghost", size: "sm" })}
-        >
-          <ArrowLeft data-icon="inline-start" aria-hidden="true" />
-          Kembali ke produk
-        </Link>
+      <article className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink render={<Link href="/#produk" />}>
+                Produk
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>{product.name}</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
 
-        <div className="mt-6 grid gap-8 lg:grid-cols-5 lg:items-start lg:gap-12">
-          <div className="flex aspect-4/3 items-center justify-center overflow-hidden border bg-muted text-muted-foreground lg:col-span-3">
+        <div className="mt-8 grid gap-8 lg:grid-cols-5 lg:items-start lg:gap-12">
+          <figure className="flex aspect-4/3 items-center justify-center overflow-hidden rounded-3xl border bg-muted text-muted-foreground lg:col-span-3">
             {product.cover.publicUrl ? (
               <Image
                 src={product.cover.publicUrl}
@@ -113,52 +128,59 @@ export default async function PublicProductPage({
                 width={product.cover.width}
                 height={product.cover.height}
                 sizes={productImageSizes}
-                className="size-full object-cover"
+                className="size-full object-contain"
                 priority
               />
             ) : (
               <ImageIcon className="size-12" aria-hidden="true" />
             )}
-          </div>
+          </figure>
 
-          <header className="lg:col-span-2 lg:pt-3">
-            <p className="text-sm font-medium text-muted-foreground">
-              Produk digital
-            </p>
-            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
-              {product.name}
-            </h1>
-            {product.summary ? (
-              <p className="mt-4 text-base/7 text-muted-foreground sm:text-lg/8">
-                {product.summary}
+          <div className="lg:col-span-2 lg:py-2">
+            <header>
+              <div className="flex flex-wrap items-center gap-3">
+                <Badge variant="secondary">Produk digital</Badge>
+                <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <CalendarDays className="size-4" aria-hidden="true" />
+                  <time dateTime={product.publishedAt}>
+                    {publishedDateFormatter.format(
+                      new Date(product.publishedAt)
+                    )}
+                  </time>
+                </span>
+              </div>
+
+              <h1 className="mt-5 text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+                {product.name}
+              </h1>
+              {product.summary ? (
+                <p className="mt-4 text-base/7 text-muted-foreground sm:text-lg/8">
+                  {product.summary}
+                </p>
+              ) : null}
+              <div className="mt-6">
+                <p className="text-sm text-muted-foreground">Harga</p>
+                <p className="mt-1 text-3xl font-semibold tabular-nums">
+                  {formatIdr(product.price.amount)}
+                </p>
+              </div>
+            </header>
+
+            <Separator className="my-8" />
+
+            <section aria-labelledby="product-description-title">
+              <h2
+                id="product-description-title"
+                className="text-xl font-semibold tracking-tight"
+              >
+                Tentang produk
+              </h2>
+              <p className="mt-3 whitespace-pre-wrap text-base/7">
+                {product.description}
               </p>
-            ) : null}
-            <p className="mt-6 text-2xl font-semibold tabular-nums">
-              {formatIdr(product.price.amount)}
-            </p>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Diterbitkan{" "}
-              <time dateTime={product.publishedAt}>
-                {publishedDateFormatter.format(new Date(product.publishedAt))}
-              </time>
-            </p>
-          </header>
+            </section>
+          </div>
         </div>
-
-        <section
-          className="mt-12 max-w-3xl border-t pt-8"
-          aria-labelledby="product-description-title"
-        >
-          <h2
-            id="product-description-title"
-            className="text-xl font-semibold tracking-tight"
-          >
-            Tentang produk
-          </h2>
-          <p className="mt-4 whitespace-pre-wrap text-base/7 text-muted-foreground">
-            {product.description}
-          </p>
-        </section>
       </article>
     </main>
   )
